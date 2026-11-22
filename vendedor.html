@@ -234,6 +234,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
 
+        <div id="erroEnvio" style="display:none;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px;margin-bottom:12px;font-size:14px;color:#991b1b;word-break:break-word;"></div>
         <button type="submit" class="btn-enviar" id="btnEnviar">Enviar Pedido</button>
       </form>
     </div>
@@ -441,12 +442,14 @@ async function enviarPedido(e){
   };
 
   try{
-    const {error}=await sb.from('pedidos_vendedor').insert([pedido]);
+    const {data, error}=await sb.from('pedidos_vendedor').insert([pedido]).select();
     if(error) throw error;
     document.getElementById('formPedido').style.display='none';
     document.getElementById('successBox').style.display='block';
   }catch(err){
-    alert('Erro ao enviar: '+(err.message||JSON.stringify(err)));
+    const msg = err.message || err.details || err.hint || JSON.stringify(err);
+    document.getElementById('erroEnvio').textContent = '❌ Erro: ' + msg;
+    document.getElementById('erroEnvio').style.display='block';
     btn.disabled=false;btn.textContent='Enviar Pedido';
   }
 }
