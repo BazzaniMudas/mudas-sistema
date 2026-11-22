@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lançar Pedido</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh}
+
+  /* LOGIN */
+  #loginScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+  .login-box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .login-logo{text-align:center;font-size:48px;margin-bottom:8px}
+  .login-title{text-align:center;font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+  .login-sub{text-align:center;font-size:14px;color:#94a3b8;margin-bottom:28px}
+  .login-input{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:12px;padding:14px 16px;font-size:16px;color:#f1f5f9;outline:none;margin-bottom:12px;-webkit-appearance:none}
+  .login-input:focus{border-color:#6366f1}
+  .btn-login{width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .15s}
+  .btn-login:active{opacity:.8}
+  .login-erro{color:#f87171;font-size:13px;text-align:center;margin-top:8px;min-height:18px}
+
+  /* APP */
+  #app{display:none;min-height:100vh;padding-bottom:40px}
+  .header{background:#1e293b;padding:16px 20px 14px;position:sticky;top:0;z-index:10;border-bottom:1px solid #334155}
+  .header-top{display:flex;align-items:center;justify-content:space-between}
+  .header-title{font-size:18px;font-weight:700;color:#f1f5f9}
+  .btn-sair{background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px}
+  .btn-sair:active{background:#334155}
+
+  .tab-bar{display:flex;background:#1e293b;border-bottom:1px solid #334155}
+  .tab-btn{flex:1;padding:12px 8px;text-align:center;font-size:13px;font-weight:600;color:#64748b;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
+  .tab-btn.ativo{color:#6366f1;border-bottom-color:#6366f1}
+
+  .content{padding:16px}
+
+  /* FORM */
+  .card{background:#1e293b;border-radius:16px;padding:16px;margin-bottom:12px}
+  .card-title{font-size:14px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:#94a3b8;margin-bottom:5px;font-weight:500}
+  .field input,.field select,.field textarea{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:12px 14px;font-size:15px;color:#f1f5f9;outline:none;-webkit-appearance:none;font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#6366f1}
+  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+  .field textarea{resize:vertical;min-height:70px}
+
+  /* PRODUTOS */
+  .prod-row{background:#0f172a;border-radius:10px;padding:12px;margin-bottom:8px;position:relative}
+  .prod-row-top{display:flex;gap:8px;margin-bottom:8px}
+  .prod-row-top input{flex:1;background:#1e293b;border:1.5px solid #334155;border-radius:8px;padding:10px 12px;font-size:14px;color:#f1f5f9;outline:none;-webkit-appearance:none}
+  .prod-row-top input:focus{border-color:#6366f1}
+  .prod-row-bot{display:flex;gap:8px;align-items:center}
+  .prod-row-bot input{flex:1;background:#1e293b;border:1.5px solid #334155;border-radius:8px;padding:10px 12px;font-size:14px;color:#f1f5f9;outline:none;-webkit-appearance:none}
+  .prod-row-bot input:focus{border-color:#6366f1}
+  .btn-rem-prod{background:#ef44441a;border:none;color:#ef4444;border-radius:8px;padding:10px 13px;font-size:16px;cursor:pointer;line-height:1}
+  .btn-rem-prod:active{opacity:.7}
+  .btn-add-prod{width:100%;background:#6366f11a;border:1.5px dashed #6366f1;border-radius:10px;color:#6366f1;padding:12px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;margin-top:4px}
+  .btn-add-prod:active{opacity:.7}
+  .prod-label-row{display:flex;gap:8px;margin-bottom:4px}
+  .prod-label-row span{flex:1;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+
+  .btn-enviar{width:100%;background:#22c55e;border:none;border-radius:14px;padding:17px;font-size:17px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;letter-spacing:.2px;transition:opacity .15s}
+  .btn-enviar:active{opacity:.8}
+  .btn-enviar:disabled{opacity:.5;cursor:not-allowed}
+
+  /* CONFIRMAÇÃO */
+  .success-box{text-align:center;padding:32px 20px}
+  .success-icon{font-size:64px;margin-bottom:12px}
+  .success-title{font-size:22px;font-weight:800;color:#22c55e;margin-bottom:8px}
+  .success-sub{font-size:15px;color:#94a3b8;margin-bottom:24px}
+  .btn-novo{background:#6366f1;border:none;border-radius:12px;padding:14px 32px;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+  .btn-novo:active{opacity:.8}
+
+  /* HISTÓRICO */
+  .hist-item{background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px}
+  .hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .hist-cliente{font-size:15px;font-weight:700;color:#f1f5f9}
+  .hist-status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px}
+  .hist-status.pendente{background:#fbbf2422;color:#fbbf24}
+  .hist-status.confirmado{background:#22c55e22;color:#22c55e}
+  .hist-data{font-size:12px;color:#64748b;margin-bottom:6px}
+  .hist-prods{font-size:13px;color:#94a3b8}
+  .hist-canal{font-size:11px;color:#6366f1;margin-top:4px;font-weight:600}
+  .empty-state{text-align:center;padding:40px 20px;color:#64748b}
+  .empty-state .icon{font-size:40px;margin-bottom:8px}
+
+  .loading{text-align:center;padding:32px;color:#64748b;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🌿</div>
+    <div class="login-title">Lançar Pedido</div>
+    <div class="login-sub">Digite a senha para acessar</div>
+    <input class="login-input" type="password" id="senhaInput" placeholder="Senha" autocomplete="current-password">
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-erro" id="loginErro"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">🌿 Lançar Pedido</div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn ativo" onclick="mudarTab('novo')" id="tabNovo">+ Novo Pedido</button>
+    <button class="tab-btn" onclick="mudarTab('historico')" id="tabHist">📋 Meus Pedidos</button>
+  </div>
+
+  <div class="content">
+    <!-- FORMULÁRIO NOVO PEDIDO -->
+    <div id="secaoNovo">
+      <div id="successBox" style="display:none">
+        <div class="success-box">
+          <div class="success-icon">✅</div>
+          <div class="success-title">Pedido enviado!</div>
+          <div class="success-sub">O pedido foi registrado com sucesso e já apareceu para o responsável.</div>
+          <button class="btn-novo" onclick="novoPedido()">+ Novo Pedido</button>
+        </div>
+      </div>
+
+      <form id="formPedido" onsubmit="enviarPedido(event)">
+        <div class="card">
+          <div class="card-title">📦 Dados do Pedido</div>
+          <div class="field">
+            <label>Cliente *</label>
+            <input type="text" id="pCliente" placeholder="Nome do cliente" required>
+          </div>
+          <div class="field">
+            <label>Data de entrega</label>
+            <input type="date" id="pData">
+          </div>
+          <div class="field">
+            <label>Canal</label>
+            <select id="pCanal">
+              <option value="organico">Orgânico</option>
+              <option value="digital">Digital</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🌱 Produtos</div>
+          <div id="listaProdutos"></div>
+          <button type="button" class="btn-add-prod" onclick="addProduto()">+ Adicionar produto</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">ℹ️ Informações extras</div>
+          <div class="field">
+            <label>Fornecedor</label>
+            <input type="text" id="pFornecedor" placeholder="Nome do fornecedor (opcional)">
+          </div>
+          <div class="field">
+            <label>Observações</label>
+            <textarea id="pObs" placeholder="Alguma observação? (opcional)"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-enviar" id="btnEnviar">Enviar Pedido</button>
+      </form>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="secaoHist" style="display:none">
+      <div id="listaHist"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ==============================
+// CONFIG — altere a senha aqui!
+// ==============================
+const SENHA_VENDEDOR = 'vendedor2024';
+
+const SUPA_URL = 'https://dtmfyupeotctxhjhtmbv.supabase.co';
+const SUPA_KEY = 'sb_publishable_RyyKNsnIKJNGa6OQ_Z9Yiw_9Bc_uf-r';
+// ==============================
+
+const { createClient } = supabase;
+let sb;
+
+function fazerLogin(){
+  const v = document.getElementById('senhaInput').value;
+  if(v === SENHA_VENDEDOR){
+    sessionStorage.setItem('vend_ok','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    iniciarApp();
+  } else {
+    document.getElementById('loginErro').textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('senhaInput').value='';
+  }
+}
+
+document.getElementById('senhaInput').addEventListener('keydown', e => { if(e.key==='Enter') fazerLogin(); });
+
+function sair(){
+  sessionStorage.removeItem('vend_ok');
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+function iniciarApp(){
+  sb = createClient(SUPA_URL, SUPA_KEY);
+  addProduto();
+  // data padrão = hoje
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('pData').value = hoje;
+}
+
+function mudarTab(tab){
+  document.getElementById('secaoNovo').style.display = tab==='novo'?'block':'none';
+  document.getElementById('secaoHist').style.display = tab==='historico'?'block':'none';
+  document.getElementById('tabNovo').classList.toggle('ativo', tab==='novo');
+  document.getElementById('tabHist').classList.toggle('ativo', tab==='historico');
+  if(tab==='historico') carregarHistorico();
+}
+
+function addProduto(nome='', qtd='', valor=''){
+  const lista = document.getElementById('listaProdutos');
+  const idx = lista.children.length;
+  const div = document.createElement('div');
+  div.className = 'prod-row';
+  div.innerHTML = `
+    <div class="prod-row-top">
+      <input type="text" placeholder="Nome do produto / variedade" value="${nome}" data-campo="nome">
+    </div>
+    <div class="prod-row-bot">
+      <input type="number" placeholder="Qtd" min="1" value="${qtd}" data-campo="qtd" style="max-width:90px">
+      <input type="number" placeholder="Preço unit. R$" min="0" step="0.01" value="${valor}" data-campo="valor">
+      <button type="button" class="btn-rem-prod" onclick="remProduto(this)">−</button>
+    </div>
+  `;
+  lista.appendChild(div);
+}
+
+function remProduto(btn){
+  const lista = document.getElementById('listaProdutos');
+  if(lista.children.length > 1) btn.closest('.prod-row').remove();
+}
+
+async function enviarPedido(e){
+  e.preventDefault();
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const produtos = [];
+  document.querySelectorAll('#listaProdutos .prod-row').forEach(row=>{
+    const nome = row.querySelector('[data-campo="nome"]').value.trim();
+    const qtd  = Number(row.querySelector('[data-campo="qtd"]').value)||0;
+    const valor= Number(row.querySelector('[data-campo="valor"]').value)||0;
+    if(nome) produtos.push({produto:nome, quantidade:qtd, valor, precoFinal:qtd*valor});
+  });
+
+  if(!produtos.length){
+    alert('Adicione pelo menos um produto.');
+    btn.disabled=false; btn.textContent='Enviar Pedido'; return;
+  }
+
+  const pedido = {
+    cliente:    document.getElementById('pCliente').value.trim(),
+    data_entrega: document.getElementById('pData').value || null,
+    produtos,
+    fornecedor: document.getElementById('pFornecedor').value.trim(),
+    obs:        document.getElementById('pObs').value.trim(),
+    canal:      document.getElementById('pCanal').value,
+    status:     'pendente'
+  };
+
+  try{
+    const { error } = await sb.from('pedidos_vendedor').insert([pedido]);
+    if(error) throw error;
+    document.getElementById('formPedido').style.display='none';
+    document.getElementById('successBox').style.display='block';
+  } catch(err){
+    alert('Erro ao enviar: ' + (err.message||JSON.stringify(err)));
+    btn.disabled=false; btn.textContent='Enviar Pedido';
+  }
+}
+
+function novoPedido(){
+  document.getElementById('formPedido').reset();
+  document.getElementById('formPedido').style.display='block';
+  document.getElementById('successBox').style.display='none';
+  document.getElementById('listaProdutos').innerHTML='';
+  addProduto();
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('pData').value = hoje;
+  document.getElementById('btnEnviar').disabled=false;
+  document.getElementById('btnEnviar').textContent='Enviar Pedido';
+}
+
+async function carregarHistorico(){
+  const el = document.getElementById('listaHist');
+  el.innerHTML = '<div class="loading">Carregando...</div>';
+  try{
+    const { data, error } = await sb
+      .from('pedidos_vendedor')
+      .select('*')
+      .order('criado_em', {ascending:false})
+      .limit(50);
+    if(error) throw error;
+    if(!data||!data.length){ el.innerHTML='<div class="empty-state"><div class="icon">📋</div>Nenhum pedido ainda</div>'; return; }
+    el.innerHTML = data.map(p=>{
+      const prods = (p.produtos||[]).map(x=>`${x.produto} (${x.quantidade})`).join(', ') || '—';
+      const dataFmt = p.data_entrega ? new Date(p.data_entrega+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+      const criadoFmt = new Date(p.criado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="hist-item">
+        <div class="hist-top">
+          <div class="hist-cliente">${p.cliente}</div>
+          <div class="hist-status ${p.status||'pendente'}">${p.status==='confirmado'?'✓ Confirmado':'⏳ Pendente'}</div>
+        </div>
+        <div class="hist-data">📅 Entrega: ${dataFmt} · Lançado: ${criadoFmt}</div>
+        <div class="hist-prods">🌱 ${prods}</div>
+        <div class="hist-canal">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</div>
+      </div>`;
+    }).join('');
+  } catch(err){
+    el.innerHTML=`<div class="empty-state"><div class="icon">❌</div>Erro ao carregar: ${err.message}</div>`;
+  }
+}
+
+// Auto-login se já estava logado
+if(sessionStorage.getItem('vend_ok')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  iniciarApp();
+}
+</script>
+</body>
+</html>
