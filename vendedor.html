@@ -562,10 +562,8 @@ async function carregarHistorico(){
         ${p.fornecedor?`<div style="font-size:12px;color:#92400e;margin-top:3px;">🏭 ${p.fornecedor}${totalForn>0?' — Custo: '+brl(totalForn):''}</div>`:''}
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span class="hist-canal ${p.canal||'digital'}">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span>
-          ${podeEditar?`
-            <button onclick="editarPedido('${p.id}')" style="background:#f0fdf4;border:1.5px solid #16a34a;color:#15803d;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>
-            <button onclick="excluirPedido('${p.id}')" style="background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Excluir</button>
-          `:''}
+          ${podeEditar?`<button onclick="editarPedido('${p.id}')" style="background:#f0fdf4;border:1.5px solid #16a34a;color:#15803d;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>`:''}
+          <button onclick="excluirPedido('${p.id}')" style="background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Excluir</button>
         </div>
       </div>`;
     }).join('');
