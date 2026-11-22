@@ -256,6 +256,8 @@ const SUPA_URL = 'https://dtmfyupeotctxhjhtmbv.supabase.co';
 const SUPA_KEY = 'sb_publishable_RyyKNsnIKJNGa6OQ_Z9Yiw_9Bc_uf-r';
 const { createClient } = supabase;
 let sb;
+let editandoPedidoId = null;
+let flatpickrInst = null;
 
 // ── LOGIN ──
 function fazerLogin(){
@@ -283,7 +285,7 @@ function sair(){
 
 function iniciarApp(){
   sb = createClient(SUPA_URL, SUPA_KEY);
-  flatpickr('#pData', {
+  flatpickrInst = flatpickr('#pData', {
     locale: 'pt',
     dateFormat: 'Y-m-d',
     altInput: true,
@@ -292,6 +294,13 @@ function iniciarApp(){
     disableMobile: false,
   });
   addProduto();
+
+  // Realtime — atualiza histórico quando status mudar
+  sb.channel('vendedor-updates')
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'pedidos_vendedor'}, ()=>{
+      if(document.getElementById('secaoHist')?.style.display!=='none') carregarHistorico();
+    })
+    .subscribe();
 }
 
 // ── TABS ──
@@ -442,30 +451,85 @@ async function enviarPedido(e){
   };
 
   try{
-    const {data, error}=await sb.from('pedidos_vendedor').insert([pedido]).select();
-    if(error) throw error;
-    document.getElementById('formPedido').style.display='none';
-    document.getElementById('successBox').style.display='block';
+    if(editandoPedidoId){
+      const {error}=await sb.from('pedidos_vendedor').update(pedido).eq('id', editandoPedidoId);
+      if(error) throw error;
+      editandoPedidoId=null;
+      document.getElementById('formPedido').style.display='none';
+      document.getElementById('successBox').querySelector('.success-title').textContent='Pedido atualizado!';
+      document.getElementById('successBox').querySelector('.success-sub').textContent='Seu pedido foi atualizado e o proprietário já foi notificado.';
+      document.getElementById('successBox').style.display='block';
+    } else {
+      const {error}=await sb.from('pedidos_vendedor').insert([pedido]).select();
+      if(error) throw error;
+      document.getElementById('successBox').querySelector('.success-title').textContent='Pedido enviado!';
+      document.getElementById('successBox').querySelector('.success-sub').textContent='O proprietário já recebeu e será confirmado em breve.';
+      document.getElementById('formPedido').style.display='none';
+      document.getElementById('successBox').style.display='block';
+    }
   }catch(err){
     const msg = err.message || err.details || err.hint || JSON.stringify(err);
     document.getElementById('erroEnvio').textContent = '❌ Erro: ' + msg;
     document.getElementById('erroEnvio').style.display='block';
-    btn.disabled=false;btn.textContent='Enviar Pedido';
+    btn.disabled=false;btn.textContent=editandoPedidoId?'Atualizar Pedido':'Enviar Pedido';
   }
 }
 
 function novoPedido(){
+  editandoPedidoId=null;
   document.getElementById('formPedido').reset();
   document.getElementById('formPedido').style.display='block';
+  document.getElementById('erroEnvio').style.display='none';
   document.getElementById('successBox').style.display='none';
   document.getElementById('listaProdutos').innerHTML='';
   document.getElementById('listaForn').innerHTML='';
-  document.getElementById('pData').value=new Date().toISOString().split('T')[0];
+  if(flatpickrInst) flatpickrInst.setDate(new Date());
   document.getElementById('btnEnviar').disabled=false;
   document.getElementById('btnEnviar').textContent='Enviar Pedido';
   document.getElementById('totalVenda').textContent='R$ 0,00';
   document.getElementById('totalForn').textContent='R$ 0,00';
   addProduto();
+}
+
+async function editarPedido(pedidoId){
+  const {data,error}=await sb.from('pedidos_vendedor').select('*').eq('id',pedidoId).single();
+  if(error||!data){alert('Erro ao carregar pedido.');return;}
+  editandoPedidoId=pedidoId;
+  mudarTab('novo');
+  // Limpa listas
+  document.getElementById('listaProdutos').innerHTML='';
+  document.getElementById('listaForn').innerHTML='';
+  // Preenche campos básicos
+  document.getElementById('pCliente').value=data.cliente||'';
+  if(flatpickrInst&&data.data_entrega) flatpickrInst.setDate(data.data_entrega);
+  document.getElementById('pCanal').value=data.canal||'digital';
+  document.getElementById('pFornecedor').value=data.fornecedor||'';
+  // Remove sufixo "Fornecedor: xxx" do obs
+  const obsLimpo=(data.obs||'').replace(/\s*\|\s*Fornecedor:.*$/,'').trim();
+  document.getElementById('pObs').value=obsLimpo;
+  // Adiciona produtos (venda e fornecedor separados)
+  const prodsVenda=(data.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
+  const prodsForn =(data.produtos||[]).filter(x=>x._tipo==='fornecedor');
+  if(prodsVenda.length){
+    prodsVenda.forEach(p=>addProduto(p.produto,p.quantidade,p.valor));
+  } else { addProduto(); }
+  // Preenche custo dos fornecedores nas linhas espelhadas
+  setTimeout(()=>{
+    const fornRows=document.querySelectorAll('#listaForn .forn-row');
+    prodsForn.forEach((f,i)=>{
+      if(i<fornRows.length){
+        fornRows[i].querySelector('[data-c=val]').value=f.custoUnitario||'';
+      }
+    });
+    recalcForn();
+  },100);
+  // Ajusta botão e form
+  document.getElementById('erroEnvio').style.display='none';
+  document.getElementById('successBox').style.display='none';
+  document.getElementById('formPedido').style.display='block';
+  document.getElementById('btnEnviar').textContent='Atualizar Pedido';
+  document.getElementById('btnEnviar').disabled=false;
+  recalcVenda();
 }
 
 // ── HISTÓRICO ──
@@ -477,30 +541,45 @@ async function carregarHistorico(){
     if(error) throw error;
     if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>Nenhum pedido ainda</div>';return;}
     el.innerHTML=data.map(p=>{
-      const prods=(p.produtos||[]).map(x=>`${x.produto} ×${x.quantidade} — ${brl(x.precoFinal)}`).join('<br>');
-      const fornPs=(p.fornecedor_produtos||[]).map(x=>`${x.variedade} ×${x.quantidade} — ${brl(x.totalCusto)}`).join('<br>');
-      const totalVenda=(p.produtos||[]).reduce((s,x)=>s+(x.precoFinal||0),0);
-      const totalForn=(p.fornecedor_produtos||[]).reduce((s,x)=>s+(x.totalCusto||0),0);
+      const prodsVenda=(p.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
+      const prodsForn =(p.produtos||[]).filter(x=>x._tipo==='fornecedor');
+      const prods=prodsVenda.map(x=>`${x.produto} ×${x.quantidade}`).join(', ')||'—';
+      const totalVenda=prodsVenda.reduce((s,x)=>s+(Number(x.precoFinal)||0),0);
+      const totalForn=prodsForn.reduce((s,x)=>s+(Number(x.totalCusto)||0),0);
       const dataFmt=p.data_entrega?new Date(p.data_entrega+'T00:00:00').toLocaleDateString('pt-BR'):'—';
-      const criadoFmt=new Date(p.criado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const criadoFmt=p.criado_em?new Date(p.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
       const st=p.status||'pendente';
       const stLabel=st==='confirmado'?'✓ Confirmado':st==='recusado'?'✕ Recusado':'⏳ Pendente';
-      return `<div class="hist-item">
+      const podeEditar=st==='pendente';
+      return `<div class="hist-item" id="hist_${p.id}">
         <div class="hist-top">
-          <div class="hist-cliente">${p.cliente}</div>
+          <div class="hist-cliente">${p.cliente||'—'}</div>
           <div class="hist-status ${st}">${stLabel}</div>
         </div>
-        <div class="hist-data">📅 Entrega: ${dataFmt} · Lançado: ${criadoFmt}</div>
-        <div class="hist-prods">${prods||'—'}</div>
-        ${totalVenda>0?`<div class="hist-total">💰 Venda: ${brl(totalVenda)}</div>`:''}
-        ${p.fornecedor?`<div class="hist-forn">🏭 Fornecedor: ${p.fornecedor}${totalForn>0?' — Custo: '+brl(totalForn):''}</div>`:''}
-        ${fornPs?`<div class="hist-prods" style="color:#9ca3af;font-size:12px;margin-top:3px">${fornPs}</div>`:''}
-        <div style="margin-top:6px"><span class="hist-canal ${p.canal||'organico'}">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span></div>
+        <div class="hist-data">📅 Entrega: ${dataFmt}${criadoFmt?' · Lançado: '+criadoFmt:''}</div>
+        <div class="hist-prods">🌱 ${prods}</div>
+        ${totalVenda>0?`<div style="font-size:13px;font-weight:700;color:#15803d;margin-top:4px;">💰 Total venda: ${brl(totalVenda)}</div>`:''}
+        ${p.fornecedor?`<div style="font-size:12px;color:#92400e;margin-top:3px;">🏭 ${p.fornecedor}${totalForn>0?' — Custo: '+brl(totalForn):''}</div>`:''}
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="hist-canal ${p.canal||'digital'}">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span>
+          ${podeEditar?`
+            <button onclick="editarPedido('${p.id}')" style="background:#f0fdf4;border:1.5px solid #16a34a;color:#15803d;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>
+            <button onclick="excluirPedido('${p.id}')" style="background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Excluir</button>
+          `:''}
+        </div>
       </div>`;
     }).join('');
   }catch(err){
     el.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div>Erro: ${err.message}</div>`;
   }
+}
+
+async function excluirPedido(pedidoId){
+  if(!confirm('Tem certeza que deseja excluir este pedido?')) return;
+  const {error}=await sb.from('pedidos_vendedor').delete().eq('id',pedidoId);
+  if(error){alert('Erro ao excluir: '+error.message);return;}
+  const el=document.getElementById('hist_'+pedidoId);
+  if(el) el.remove();
 }
 
 // Auto-login
