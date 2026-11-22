@@ -146,6 +146,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </label>
     <button class="btn-login" onclick="fazerLogin()">Entrar</button>
     <div class="login-erro" id="loginErro"></div>
+
+    <div style="margin-top:20px;border-top:1px solid #e5e7eb;padding-top:16px;text-align:center;">
+      <button onclick="mostrarDica()" style="background:none;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:inherit;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;">
+        🖥️ Adicionar à área de trabalho
+      </button>
+      <div id="dicaAtalho" style="display:none;margin-top:12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px;text-align:left;">
+        <div style="font-size:12px;font-weight:800;color:#15803d;margin-bottom:8px;">Como criar atalho rápido:</div>
+        <div style="font-size:12px;color:#374151;line-height:1.7;">
+          <b>Google Chrome:</b><br>
+          Clique nos <b>⋮</b> (3 pontos) → <b>Mais ferramentas</b> → <b>Criar atalho</b><br><br>
+          <b>Safari (Mac):</b><br>
+          Arraste o 🌐 da barra de endereço para a <b>Área de Trabalho</b><br><br>
+          <b>Celular (Android):</b><br>
+          Menu → <b>Adicionar à tela inicial</b><br><br>
+          <b>iPhone:</b><br>
+          Compartilhar ↑ → <b>Adicionar à Tela de Início</b>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -614,6 +633,13 @@ async function carregarHistorico(){
   }catch(err){
     el.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div>Erro: ${err.message}</div>`;
   }
+}
+
+function mostrarDica(){
+  const el = document.getElementById('dicaAtalho');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  // Se tiver prompt de instalação disponível, dispara
+  if(_installPrompt){ _installPrompt.prompt(); }
 }
 
 // ── INSTALAR APP ──
