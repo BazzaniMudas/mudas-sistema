@@ -315,6 +315,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div><!-- /app -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 <script>
@@ -686,6 +687,37 @@ function instalarApp(){
 })();
 
 
+async function _enviarOrcWpp(wppNum, wppMsg){
+  const el = document.getElementById('orcContent');
+  const btn = event.currentTarget;
+  btn.textContent = '⏳ Gerando...';
+  btn.disabled = true;
+  try {
+    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false});
+    canvas.toBlob(async blob=>{
+      const file = new File([blob],'orcamento-bazzani-mudas.png',{type:'image/png'});
+      // Tenta Web Share API (funciona no celular — abre direto no WhatsApp)
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file], text: decodeURIComponent(wppMsg)});
+          btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false; return;
+        }catch(e){}
+      }
+      // Fallback desktop: baixa a imagem e abre WhatsApp com o texto
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href=url; a.download='orcamento-bazzani-mudas.png'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      setTimeout(()=>window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank'),300);
+      btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false;
+    },'image/png');
+  } catch(e){
+    // Fallback total
+    window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
+    btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false;
+  }
+}
+
 function gerarOrcamentoForm(){
   // Lê os dados do formulário sem enviar
   const cliente = document.getElementById('pCliente').value.trim();
@@ -724,7 +756,20 @@ function gerarOrcamento(p){
   const numOrc = (p.id||'').slice(-6).toUpperCase();
   const contatoFmt = (p.contato||'').replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3');
   const wppNum = p.contato ? '55'+p.contato.replace(/\D/g,'') : '';
-  const wppMsg = p.contato ? encodeURIComponent('Olá '+( p.cliente||'')+', segue seu orçamento Bazzani Mudas nº '+numOrc+'!') : '';
+  const linhasProd = prods.map(x=>`• ${x.produto} × ${Number(x.quantidade||0).toLocaleString('pt-BR')} — ${fmtBrl(x.precoFinal)}`).join('\n');
+  const wppTexto = p.contato ? [
+    `Olá ${p.cliente||''}! 🌱`,
+    ``,
+    `*Orçamento Bazzani Mudas — #${numOrc}*`,
+    ``,
+    `*Produtos:*`,
+    linhasProd,
+    ``,
+    `*Total: ${fmtBrl(totalVenda)}*`,
+    p.data_entrega ? `*Entrega: ${dataEntrega}*` : '',
+    p.obs ? `\n📝 ${p.obs}` : '',
+  ].filter(l=>l!==null&&l!==undefined).join('\n') : '';
+  const wppMsg = wppTexto ? encodeURIComponent(wppTexto) : '';
 
   const linhas = prods.map((x,i)=>`
     <tr style="background:${i%2===0?'#fff':'#f8fffe'}">
@@ -791,7 +836,7 @@ function gerarOrcamento(p){
     <div class="orc-acoes" style="padding:16px 32px;background:#f0f4f0;border-top:1px solid #d1fae5;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button onclick="document.getElementById('orcOverlay').style.display='none'" style="background:#fff;border:2px solid #ccc;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#555;">✕ Fechar</button>
       <button onclick="window.print()" style="background:#065f46;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">🖨️ Salvar PDF</button>
-      ${wppNum?'<a href="https://wa.me/'+wppNum+'?text='+wppMsg+'" target="_blank" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">💬 Enviar no WhatsApp</a>':''}
+      ${wppNum?'<button onclick="_enviarOrcWpp(\''+wppNum+'\',\''+wppMsg+'\')" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">💬 Enviar no WhatsApp</button>':''}
     </div>
 
     <div style="background:#065f46;padding:12px 32px;text-align:center;font-size:11px;color:rgba(255,255,255,.55);">
