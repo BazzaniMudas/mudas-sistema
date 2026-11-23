@@ -199,7 +199,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="app">
   <div class="header">
     <div class="header-title">🌿 Lançar Pedido</div>
-    <button class="btn-sair" onclick="sair()">Sair</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-sair" onclick="_configChave()" title="Configurar chave OpenAI">🔑</button>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn ativo" onclick="mudarTab('novo')" id="tabNovo">+ Novo Pedido</button>
@@ -695,6 +698,33 @@ function _enviarOrcWpp(wppNum, wppMsg){
 }
 
 // ── VOZ ──────────────────────────────────────────────
+function _configChave(){
+  const atual = localStorage.getItem('bm_openai_key');
+  const msg = atual ? '🔑 Chave atual: ...'+atual.slice(-6)+'\n\nCole a nova chave (ou deixe em branco para manter):' : '🔑 Cole sua chave da OpenAI (começa com sk-):';
+  const nova = prompt(msg);
+  if(nova === null) return; // cancelou
+  if(nova.trim() === '' && atual) { alert('Chave mantida.'); return; }
+  if(nova.trim().startsWith('sk-')){
+    localStorage.setItem('bm_openai_key', nova.trim());
+    alert('✅ Chave salva com sucesso!');
+  } else {
+    alert('Chave inválida. Deve começar com "sk-".');
+  }
+}
+
+function _getOpenAIKey(){
+  const k = localStorage.getItem('bm_openai_key');
+  if(!k){
+    const nova = prompt('🔑 Cole aqui sua chave da OpenAI (começa com sk-):\n\nEla será guardada só no seu dispositivo.');
+    if(nova && nova.trim().startsWith('sk-')){
+      localStorage.setItem('bm_openai_key', nova.trim());
+      return nova.trim();
+    }
+    alert('Chave inválida. A chave deve começar com "sk-".');
+    return null;
+  }
+  return k;
+}
 let _vozRec = null;
 function _pararVoz(){
   if(_vozRec){ try{_vozRec.stop();}catch(e){} _vozRec=null; }
@@ -727,34 +757,93 @@ function iniciarVozPedido(){
     if(!finalText){ _pararVoz(); return; }
     document.getElementById('vozStatus').textContent='⚙️ Interpretando...';
     document.getElementById('vozIcone').textContent='⚙️';
-    setTimeout(()=>{ _interpretarVoz(finalText); },400);
+    setTimeout(()=>{ _interpretarVoz(finalText).catch(e=>console.error(e)); },400);
   };
   rec.start();
 }
 function _cap(s){ return s.trim().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
-function _interpretarVoz(texto){
-  const t = texto.toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'') // remove acentos para parsing
-    .replace(/,/g,' ,');
-  const orig = texto;
+async function _interpretarVoz(texto){
+  document.getElementById('vozStatus').textContent='🤖 Interpretando com IA...';
+  try{
+    const _OPENAI_KEY = _getOpenAIKey();
+    if(!_OPENAI_KEY) return;
+    const res = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_OPENAI_KEY},
+      body: JSON.stringify({
+        model:'gpt-4o-mini',
+        temperature:0,
+        messages:[{
+          role:'system',
+          content:`Você extrai dados de pedidos de mudas/plantas falados em português. Responda SOMENTE com JSON válido neste formato exato:
+{"cliente":"","vendedor":"","contato":"","data_entrega":"","canal":"digital","obs":"","produtos":[{"produto":"","quantidade":0,"valor":0}]}
+Regras: vendedor só preenche se for "Bruno" ou "Wallace"; canal só "digital" ou "organico"; data_entrega no formato YYYY-MM-DD (ano atual 2026); valor é o preço por unidade em número decimal; contato só números; produtos é array com cada muda separada.`
+        },{
+          role:'user',
+          content: texto
+        }]
+      })
+    });
+    const json = await res.json();
+    if(json.error) throw new Error(json.error.message);
+    const raw = json.choices[0].message.content.replace(/```json|```/g,'').trim();
+    const d = JSON.parse(raw);
 
-  // Cliente
-  const cli = t.match(/(?:cliente|para|pra)\s+([a-z]+(?:\s+[a-z]+){0,3})/);
-  if(cli) document.getElementById('pCliente').value = _cap(cli[1]);
+    if(d.cliente) document.getElementById('pCliente').value = d.cliente;
+    if(d.contato) document.getElementById('pContato').value = d.contato.replace(/\D/g,'');
+    if(d.vendedor) document.getElementById('pVendedor').value = d.vendedor;
+    if(d.canal) document.getElementById('pCanal').value = d.canal;
+    if(d.obs) document.getElementById('pObs').value = d.obs;
+    if(d.data_entrega){ try{ document.getElementById('pData')._flatpickr.setDate(d.data_entrega); }catch(e){} }
+    if(d.produtos && d.produtos.length>0){
+      document.getElementById('listaProdutos').innerHTML='';
+      document.getElementById('listaForn').innerHTML='';
+      d.produtos.forEach(p=>{ if(p.produto) addProduto(p.produto, p.quantidade||0, p.valor||0); });
+      recalcVenda(); recalcForn();
+    }
+    document.getElementById('vozIcone').textContent='✅';
+    document.getElementById('vozStatus').textContent='Pronto! Confira os dados abaixo.';
+    setTimeout(_pararVoz,1800);
+    return;
+  }catch(err){
+    console.error('OpenAI erro:',err);
+    document.getElementById('vozStatus').textContent='⚠️ IA falhou, usando parser local...';
+    setTimeout(()=>_interpretarVozLocal(texto),600);
+    return;
+  }
+}
+function _interpretarVozLocal(texto){
+  // Fallback sem IA
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const t = norm(texto).replace(/r\$\s*/g,'').replace(/,/g,' ').replace(/\s+/g,' ');
 
-  // Contato
-  const tel = orig.match(/(?:whatsapp|contato|fone|telefone|zap)\s*[:\-]?\s*([\d\s\(\)\-+]{8,})/i);
+  // ── CLIENTE ──
+  // "o cliente chama/é/se chama João" / "cliente João" / "para a João" / "o nome é João"
+  const cliPatterns = [
+    /(?:cliente\s+(?:se\s+)?(?:chama|e|eh|nome)\s+)([a-z]+(?:\s+[a-z]+)?)/,
+    /(?:nome\s+(?:do\s+cliente\s+)?(?:e|eh|e\s+)?)([a-z]+(?:\s+[a-z]+)?)/,
+    /(?:^|[\s.])(?:cliente|para|pra)\s+(?:a\s+|o\s+)?([a-z]+(?:\s+[a-z]+){0,2})(?:\s*[,.]|$)/,
+  ];
+  for(const rx of cliPatterns){
+    const m = t.match(rx);
+    if(m && m[1] && m[1].length>1 && !['vendedor','bruno','wallace','digital','organico','dia'].includes(m[1].trim())){
+      document.getElementById('pCliente').value = _cap(m[1].trim()); break;
+    }
+  }
+
+  // ── VENDEDOR ── só se explicitamente dito "vendedor Bruno/Wallace"
+  if(/vendedor\s+bruno/.test(t)) document.getElementById('pVendedor').value='Bruno';
+  else if(/vendedor\s+wallace/.test(t)) document.getElementById('pVendedor').value='Wallace';
+
+  // ── CONTATO ──
+  const tel = texto.match(/(?:whatsapp|contato|fone|telefone|zap)\s*[:\-]?\s*([\d\s\(\)\-+]{8,})/i);
   if(tel) document.getElementById('pContato').value = tel[1].replace(/\D/g,'');
 
-  // Vendedor
-  if(t.includes('bruno')) document.getElementById('pVendedor').value='Bruno';
-  else if(t.includes('wallace')) document.getElementById('pVendedor').value='Wallace';
+  // ── CANAL ──
+  if(/\bdigital\b/.test(t)) document.getElementById('pCanal').value='digital';
+  else if(/\borganico\b/.test(t)) document.getElementById('pCanal').value='organico';
 
-  // Canal
-  if(t.includes('digital')) document.getElementById('pCanal').value='digital';
-  else if(t.includes('organico')||t.includes('organica')) document.getElementById('pCanal').value='organico';
-
-  // Data de entrega
+  // ── DATA ──
   const meses={janeiro:1,fevereiro:2,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
   const dtM = t.match(/(?:entreg[a-z]*|data|dia)\s+(?:dia\s+)?(\d{1,2})(?:\s+(?:de\s+)?([a-z]+))?/);
   if(dtM){
@@ -762,34 +851,38 @@ function _interpretarVoz(texto){
     const mesNome=dtM[2]||'';
     const mes=meses[mesNome]||new Date().getMonth()+1;
     const ano=new Date().getFullYear();
-    const ds=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-    try{ document.getElementById('pData')._flatpickr.setDate(ds); }catch(e){}
+    try{ document.getElementById('pData')._flatpickr.setDate(`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`); }catch(e){}
   }
 
-  // Produtos: "300 rosas a 5 reais" / "200 gerberas por 3,50" / "cem rosas cinco reais"
-  const nums={'um':1,'uma':1,'dois':2,'duas':2,'tres':3,'quatro':4,'cinco':5,'seis':6,'sete':7,'oito':8,'nove':9,'dez':10,'vinte':20,'trinta':30,'quarenta':40,'cinquenta':50,'cem':100,'duzentos':200,'trezentos':300,'quatrocentos':400,'quinhentos':500};
-  const tNorm = t.replace(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|quarenta|cinquenta|cem|duzentos|trezentos|quatrocentos|quinhentos)\b/g,m=>nums[m]||m);
-  const prodRx = /(\d+(?:[.,]\d+)?)\s+([a-z][a-z\s]{1,30}?)\s+(?:a|por|@)\s+(\d+(?:[.,]\d+)?)/g;
+  // ── PRODUTOS ──
+  // Converte números por extenso
+  const numPalavras={'um':1,'uma':1,'dois':2,'duas':2,'tres':3,'quatro':4,'cinco':5,'seis':6,'sete':7,'oito':8,'nove':9,'dez':10,'vinte':20,'trinta':30,'quarenta':40,'cinquenta':50,'sessenta':60,'setenta':70,'oitenta':80,'noventa':90,'cem':100,'cento':100,'duzentos':200,'trezentos':300,'quatrocentos':400,'quinhentos':500,'mil':1000};
+  let tNum = t.replace(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos|trezentos|quatrocentos|quinhentos|mil)\b/g,w=>numPalavras[w]);
+  // Remove palavras de ruído antes/depois do produto
+  const ruido = /\b(?:mudas?\s+de|muda\s+de|unidades?\s+de|uns?|umas?|cada\s+uma|cada|por\s+unidade|reais|real)\b/g;
+  tNum = tNum.replace(ruido,' ');
+  // Padrão: QUANTIDADE NOME_PRODUTO a/por PRECO
+  // Ex: "300 rosa spray vermelha a 3 50" / "200 gerbera por 5"
+  const prodRx = /(\d+(?:\.\d+)?)\s+([a-z][a-z\s]{1,40}?)\s+(?:a|por|@)\s+(\d+(?:\s\d{2})?(?:\.\d+)?)\b/g;
   let m; const prodsParsed=[];
-  while((m=prodRx.exec(tNorm))!==null){
-    const qtd=parseFloat(m[1].replace(',','.'));
-    const nome=_cap(m[2].trim().replace(/\s+/g,' '));
-    const val=parseFloat(m[3].replace(',','.'));
-    if(qtd>0 && nome && val>0) prodsParsed.push({nome,qtd,val});
+  while((m=prodRx.exec(tNum))!==null){
+    const qtd = parseFloat(m[1]);
+    const nomeRaw = m[2].trim().replace(/\s+/g,' ');
+    // Preço: "3 50" vira "3.50"
+    const precoStr = m[3].replace(/(\d+)\s(\d{2})$/,'$1.$2');
+    const val = parseFloat(precoStr);
+    if(qtd>0 && nomeRaw.length>1 && val>0) prodsParsed.push({nome:_cap(nomeRaw), qtd, val});
   }
   if(prodsParsed.length>0){
-    // Limpa e preenche linhas de produto
-    const lista=document.getElementById('listaProdutos');
-    const fornLista=document.getElementById('listaForn');
-    lista.innerHTML=''; fornLista.innerHTML='';
-    prodsParsed.forEach((p,i)=>{ addProduto(p.nome,p.qtd,p.val); });
+    document.getElementById('listaProdutos').innerHTML='';
+    document.getElementById('listaForn').innerHTML='';
+    prodsParsed.forEach(p=>addProduto(p.nome, p.qtd, p.val));
     recalcVenda(); recalcForn();
   }
 
-  // Fechar overlay com feedback
   document.getElementById('vozIcone').textContent='✅';
-  document.getElementById('vozStatus').textContent='Pronto! Confira os dados abaixo.';
-  setTimeout(_pararVoz,1800);
+  document.getElementById('vozStatus').textContent='Pronto! Confira e ajuste se necessário.';
+  setTimeout(_pararVoz,2000);
 }
 // ── FIM VOZ ──────────────────────────────────────────
 
