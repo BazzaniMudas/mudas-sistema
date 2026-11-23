@@ -726,38 +726,62 @@ function _getOpenAIKey(){
   return k;
 }
 let _vozRec = null;
+let _vozTextoAcumulado = '';
+let _vozEnviando = false;
 function _pararVoz(){
+  _vozEnviando = false;
   if(_vozRec){ try{_vozRec.stop();}catch(e){} _vozRec=null; }
   document.getElementById('vozOverlay').style.display='none';
+}
+function _enviarVoz(){
+  if(!_vozTextoAcumulado.trim()){ alert('Nenhum texto capturado ainda.'); return; }
+  _vozEnviando = true;
+  if(_vozRec){ try{_vozRec.stop();}catch(e){} _vozRec=null; }
+  document.getElementById('vozStatus').textContent='⚙️ Interpretando...';
+  document.getElementById('vozIcone').textContent='⚙️';
+  document.getElementById('vozBtnEnviar').style.display='none';
+  setTimeout(()=>{ _interpretarVoz(_vozTextoAcumulado).catch(e=>console.error(e)); },400);
 }
 function iniciarVozPedido(){
   const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ alert('Use Chrome ou Safari para o comando de voz.'); return; }
+  _vozTextoAcumulado = '';
+  _vozEnviando = false;
   const ov = document.getElementById('vozOverlay');
   ov.style.display='flex';
   document.getElementById('vozStatus').textContent='🎤 Ouvindo... fale o pedido';
   document.getElementById('vozTranscricao').textContent='';
   document.getElementById('vozIcone').textContent='🎤';
+  document.getElementById('vozBtnEnviar').style.display='inline-block';
   const rec = _vozRec = new SR();
-  rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=true;
-  let finalText='';
+  rec.lang='pt-BR'; rec.continuous=true; rec.interimResults=true;
   rec.onresult=function(e){
-    let interim=''; finalText='';
-    for(let i=0;i<e.results.length;i++){
-      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+    let interim=''; let novoFinal='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) novoFinal+=e.results[i][0].transcript+' ';
       else interim+=e.results[i][0].transcript;
     }
-    document.getElementById('vozTranscricao').textContent=finalText||interim;
+    if(novoFinal) _vozTextoAcumulado+=novoFinal;
+    document.getElementById('vozTranscricao').textContent=(_vozTextoAcumulado+interim).trim();
   };
   rec.onerror=function(e){
+    if(e.error==='no-speech') return; // ignora pausas
     document.getElementById('vozStatus').textContent='❌ Erro: '+e.error;
     setTimeout(_pararVoz,2000);
   };
   rec.onend=function(){
-    if(!finalText){ _pararVoz(); return; }
-    document.getElementById('vozStatus').textContent='⚙️ Interpretando...';
-    document.getElementById('vozIcone').textContent='⚙️';
-    setTimeout(()=>{ _interpretarVoz(finalText).catch(e=>console.error(e)); },400);
+    // Reinicia automaticamente se o overlay ainda está aberto e não enviou/cancelou
+    if(!_vozEnviando && document.getElementById('vozOverlay').style.display!=='none'){
+      try{
+        const rec2 = new SR();
+        _vozRec = rec2;
+        rec2.lang='pt-BR'; rec2.continuous=true; rec2.interimResults=true;
+        rec2.onresult = rec.onresult;
+        rec2.onerror = rec.onerror;
+        rec2.onend = rec.onend;
+        rec2.start();
+      }catch(e){}
+    }
   };
   rec.start();
 }
@@ -775,9 +799,18 @@ async function _interpretarVoz(texto){
         temperature:0,
         messages:[{
           role:'system',
-          content:`Você extrai dados de pedidos de mudas/plantas falados em português. Responda SOMENTE com JSON válido neste formato exato:
+          content:`Você extrai dados de pedidos de mudas/plantas falados em português brasileiro. Responda SOMENTE com JSON válido neste formato exato:
 {"cliente":"","vendedor":"","contato":"","data_entrega":"","canal":"digital","obs":"","produtos":[{"produto":"","quantidade":0,"valor":0}]}
-Regras: vendedor só preenche se for "Bruno" ou "Wallace"; canal só "digital" ou "organico"; data_entrega no formato YYYY-MM-DD (ano atual 2026); valor é o preço por unidade em número decimal; contato só números; produtos é array com cada muda separada.`
+Regras importantes:
+- vendedor: só preenche se mencionar "Bruno" ou "Wallace", senão deixa vazio
+- canal: só "digital" ou "organico"
+- data_entrega: formato YYYY-MM-DD, ano atual 2026. "dia 30" = 2026-12-30, "30 de janeiro" = 2026-01-30
+- valor: preço POR UNIDADE em número decimal. "a 5" = 5.00, "a R$3,50" = 3.50, "a 3 reais e meio" = 3.50
+- quantidade: número inteiro. "400 mudas" = 400, "trezentas" = 300
+- O sistema calcula o total automaticamente (quantidade × valor), você só informa quantidade e valor unitário
+- contato: só dígitos do telefone, sem formatação
+- produtos: array com CADA tipo de muda separada
+- Se faltar algum dado, deixa vazio/zero — não invente nada`
         },{
           role:'user',
           content: texto
@@ -1041,7 +1074,10 @@ if(localStorage.getItem('vend_ok')==='1' || sessionStorage.getItem('vend_ok')===
     <div id="vozStatus" style="font-size:18px;font-weight:800;color:#fff;margin-bottom:12px;">Preparando...</div>
     <div id="vozTranscricao" style="min-height:60px;background:rgba(255,255,255,.08);border-radius:12px;padding:14px;font-size:14px;color:rgba(255,255,255,.8);line-height:1.5;margin-bottom:20px;text-align:left;"></div>
     <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:20px;">Exemplo: "Cliente João Silva, vendedor Bruno, 300 rosas a 5 reais, entregar dia 30"</div>
-    <button onclick="_pararVoz()" style="background:#ef4444;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cancelar</button>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button id="vozBtnEnviar" onclick="_enviarVoz()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Enviar</button>
+      <button onclick="_pararVoz()" style="background:#ef4444;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cancelar</button>
+    </div>
   </div>
 </div>
 
