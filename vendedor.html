@@ -221,6 +221,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <form id="formPedido" onsubmit="enviarPedido(event)">
 
+        <!-- BOTÃO VOZ -->
+        <button type="button" onclick="iniciarVozPedido()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;">🎤 Preencher por Voz</button>
+
         <!-- DADOS DO PEDIDO -->
         <div class="card">
           <div class="card-title">📋 Dados do Pedido</div>
@@ -691,6 +694,105 @@ function _enviarOrcWpp(wppNum, wppMsg){
   window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
 }
 
+// ── VOZ ──────────────────────────────────────────────
+let _vozRec = null;
+function _pararVoz(){
+  if(_vozRec){ try{_vozRec.stop();}catch(e){} _vozRec=null; }
+  document.getElementById('vozOverlay').style.display='none';
+}
+function iniciarVozPedido(){
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ alert('Use Chrome ou Safari para o comando de voz.'); return; }
+  const ov = document.getElementById('vozOverlay');
+  ov.style.display='flex';
+  document.getElementById('vozStatus').textContent='🎤 Ouvindo... fale o pedido';
+  document.getElementById('vozTranscricao').textContent='';
+  document.getElementById('vozIcone').textContent='🎤';
+  const rec = _vozRec = new SR();
+  rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=true;
+  let finalText='';
+  rec.onresult=function(e){
+    let interim=''; finalText='';
+    for(let i=0;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    document.getElementById('vozTranscricao').textContent=finalText||interim;
+  };
+  rec.onerror=function(e){
+    document.getElementById('vozStatus').textContent='❌ Erro: '+e.error;
+    setTimeout(_pararVoz,2000);
+  };
+  rec.onend=function(){
+    if(!finalText){ _pararVoz(); return; }
+    document.getElementById('vozStatus').textContent='⚙️ Interpretando...';
+    document.getElementById('vozIcone').textContent='⚙️';
+    setTimeout(()=>{ _interpretarVoz(finalText); },400);
+  };
+  rec.start();
+}
+function _cap(s){ return s.trim().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
+function _interpretarVoz(texto){
+  const t = texto.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'') // remove acentos para parsing
+    .replace(/,/g,' ,');
+  const orig = texto;
+
+  // Cliente
+  const cli = t.match(/(?:cliente|para|pra)\s+([a-z]+(?:\s+[a-z]+){0,3})/);
+  if(cli) document.getElementById('pCliente').value = _cap(cli[1]);
+
+  // Contato
+  const tel = orig.match(/(?:whatsapp|contato|fone|telefone|zap)\s*[:\-]?\s*([\d\s\(\)\-+]{8,})/i);
+  if(tel) document.getElementById('pContato').value = tel[1].replace(/\D/g,'');
+
+  // Vendedor
+  if(t.includes('bruno')) document.getElementById('pVendedor').value='Bruno';
+  else if(t.includes('wallace')) document.getElementById('pVendedor').value='Wallace';
+
+  // Canal
+  if(t.includes('digital')) document.getElementById('pCanal').value='digital';
+  else if(t.includes('organico')||t.includes('organica')) document.getElementById('pCanal').value='organico';
+
+  // Data de entrega
+  const meses={janeiro:1,fevereiro:2,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+  const dtM = t.match(/(?:entreg[a-z]*|data|dia)\s+(?:dia\s+)?(\d{1,2})(?:\s+(?:de\s+)?([a-z]+))?/);
+  if(dtM){
+    const dia=parseInt(dtM[1]);
+    const mesNome=dtM[2]||'';
+    const mes=meses[mesNome]||new Date().getMonth()+1;
+    const ano=new Date().getFullYear();
+    const ds=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    try{ document.getElementById('pData')._flatpickr.setDate(ds); }catch(e){}
+  }
+
+  // Produtos: "300 rosas a 5 reais" / "200 gerberas por 3,50" / "cem rosas cinco reais"
+  const nums={'um':1,'uma':1,'dois':2,'duas':2,'tres':3,'quatro':4,'cinco':5,'seis':6,'sete':7,'oito':8,'nove':9,'dez':10,'vinte':20,'trinta':30,'quarenta':40,'cinquenta':50,'cem':100,'duzentos':200,'trezentos':300,'quatrocentos':400,'quinhentos':500};
+  const tNorm = t.replace(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|quarenta|cinquenta|cem|duzentos|trezentos|quatrocentos|quinhentos)\b/g,m=>nums[m]||m);
+  const prodRx = /(\d+(?:[.,]\d+)?)\s+([a-z][a-z\s]{1,30}?)\s+(?:a|por|@)\s+(\d+(?:[.,]\d+)?)/g;
+  let m; const prodsParsed=[];
+  while((m=prodRx.exec(tNorm))!==null){
+    const qtd=parseFloat(m[1].replace(',','.'));
+    const nome=_cap(m[2].trim().replace(/\s+/g,' '));
+    const val=parseFloat(m[3].replace(',','.'));
+    if(qtd>0 && nome && val>0) prodsParsed.push({nome,qtd,val});
+  }
+  if(prodsParsed.length>0){
+    // Limpa e preenche linhas de produto
+    const lista=document.getElementById('listaProdutos');
+    const fornLista=document.getElementById('listaForn');
+    lista.innerHTML=''; fornLista.innerHTML='';
+    prodsParsed.forEach((p,i)=>{ addProduto(p.nome,p.qtd,p.val); });
+    recalcVenda(); recalcForn();
+  }
+
+  // Fechar overlay com feedback
+  document.getElementById('vozIcone').textContent='✅';
+  document.getElementById('vozStatus').textContent='Pronto! Confira os dados abaixo.';
+  setTimeout(_pararVoz,1800);
+}
+// ── FIM VOZ ──────────────────────────────────────────
+
 function gerarOrcamentoForm(){
   // Lê os dados do formulário sem enviar
   const cliente = document.getElementById('pCliente').value.trim();
@@ -839,6 +941,17 @@ if(localStorage.getItem('vend_ok')==='1' || sessionStorage.getItem('vend_ok')===
 }
 </script>
 </body>
+<!-- overlay de voz -->
+<div id="vozOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:10000;display:none;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#1e1b4b;border-radius:24px;padding:32px 28px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div id="vozIcone" style="font-size:64px;margin-bottom:16px;">🎤</div>
+    <div id="vozStatus" style="font-size:18px;font-weight:800;color:#fff;margin-bottom:12px;">Preparando...</div>
+    <div id="vozTranscricao" style="min-height:60px;background:rgba(255,255,255,.08);border-radius:12px;padding:14px;font-size:14px;color:rgba(255,255,255,.8);line-height:1.5;margin-bottom:20px;text-align:left;"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:20px;">Exemplo: "Cliente João Silva, vendedor Bruno, 300 rosas a 5 reais, entregar dia 30"</div>
+    <button onclick="_pararVoz()" style="background:#ef4444;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cancelar</button>
+  </div>
+</div>
+
 <!-- overlay de orçamento -->
 <div id="orcOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;overflow-y:auto;padding:16px;">
   <div id="orcContent" style="background:#fff;max-width:720px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);"></div>
