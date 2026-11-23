@@ -688,31 +688,37 @@ function instalarApp(){
 
 
 async function _enviarOrcWpp(wppNum, wppMsg){
-  const el = document.getElementById('orcContent');
+  const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  // Desktop: abre WhatsApp direto com texto + baixa imagem de fundo
+  if(!isMobile){
+    window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
+    // Baixa imagem silenciosamente para o usuário poder anexar se quiser
+    try{
+      const canvas = await html2canvas(document.getElementById('orcContent'),{scale:2,useCORS:true,backgroundColor:'#fff',logging:false});
+      canvas.toBlob(blob=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;a.download='orcamento-bazzani-mudas.png';a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),2000);
+      },'image/png');
+    }catch(e){}
+    return;
+  }
+  // Mobile: captura imagem e compartilha direto no WhatsApp via Web Share API
   const btn = event.currentTarget;
-  btn.textContent = '⏳ Gerando...';
-  btn.disabled = true;
-  try {
-    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false});
+  btn.textContent='⏳ Gerando...'; btn.disabled=true;
+  try{
+    const canvas = await html2canvas(document.getElementById('orcContent'),{scale:2,useCORS:true,backgroundColor:'#fff',logging:false});
     canvas.toBlob(async blob=>{
       const file = new File([blob],'orcamento-bazzani-mudas.png',{type:'image/png'});
-      // Tenta Web Share API (funciona no celular — abre direto no WhatsApp)
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{
-          await navigator.share({files:[file], text: decodeURIComponent(wppMsg)});
-          btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false; return;
-        }catch(e){}
+        try{ await navigator.share({files:[file]}); }catch(e){}
+      } else {
+        window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
       }
-      // Fallback desktop: baixa a imagem e abre WhatsApp com o texto
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href=url; a.download='orcamento-bazzani-mudas.png'; a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),2000);
-      setTimeout(()=>window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank'),300);
       btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false;
     },'image/png');
-  } catch(e){
-    // Fallback total
+  }catch(e){
     window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
     btn.textContent='💬 Enviar no WhatsApp'; btn.disabled=false;
   }
