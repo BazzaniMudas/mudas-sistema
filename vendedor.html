@@ -229,6 +229,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <input type="text" id="pCliente" placeholder="Ex: João Silva" required autocomplete="off">
           </div>
           <div class="field">
+            <label>WhatsApp do Cliente</label>
+            <input type="tel" id="pContato" placeholder="Ex: 11999998888" autocomplete="off" inputmode="numeric">
+          </div>
+          <div class="field">
             <label>Vendedor *</label>
             <select id="pVendedor" required>
               <option value="">— Selecionar —</option>
@@ -510,6 +514,7 @@ async function enviarPedido(e){
     obs:          obsFinal,
     canal:        document.getElementById('pCanal').value,
     vendedor:     document.getElementById('pVendedor').value,
+    contato:      document.getElementById('pContato').value.replace(/\D/g,'')||null,
     status:       'pendente'
   };
 
@@ -564,6 +569,7 @@ async function editarPedido(pedidoId){
   document.getElementById('listaForn').innerHTML='';
   // Preenche campos básicos
   document.getElementById('pCliente').value=data.cliente||'';
+  document.getElementById('pContato').value=data.contato||'';
   if(flatpickrInst&&data.data_entrega) flatpickrInst.setDate(data.data_entrega);
   document.getElementById('pCanal').value=data.canal||'digital';
   document.getElementById('pFornecedor').value=data.fornecedor||'';
@@ -603,6 +609,8 @@ async function carregarHistorico(){
     const {data,error}=await sb.from('pedidos_vendedor').select('*').order('criado_em',{ascending:false}).limit(50);
     if(error) throw error;
     if(!data||!data.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>Nenhum pedido ainda</div>';return;}
+    window._histPedidos={};
+    data.forEach(p=>{window._histPedidos[p.id]=p;});
     el.innerHTML=data.map(p=>{
       const prodsVenda=(p.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
       const prodsForn =(p.produtos||[]).filter(x=>x._tipo==='fornecedor');
@@ -626,6 +634,7 @@ async function carregarHistorico(){
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span class="hist-canal ${p.canal||'digital'}">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span>
           ${podeEditar?`<button onclick="editarPedido('${p.id}')" style="background:#f0fdf4;border:1.5px solid #16a34a;color:#15803d;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>`:''}
+          <button onclick="gerarOrcamento(window._histPedidos&&window._histPedidos['${p.id}'])" style="background:#f0f7ff;border:1.5px solid #3b82f6;color:#1d4ed8;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Orçamento</button>
           <button onclick="excluirPedido('${p.id}')" style="background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Excluir</button>
         </div>
       </div>`;
@@ -674,6 +683,134 @@ function instalarApp(){
     document.getElementById('bannerIos').style.display = 'block';
   }
 })();
+
+
+function gerarOrcamento(p){
+  const prods = (p.produtos||[]).filter(x=>x.produto && !x._tipo);
+  const totalVenda = prods.reduce((s,x)=>s+(Number(x.precoFinal)||0),0);
+  const totalQtd = prods.reduce((s,x)=>s+(Number(x.quantidade)||0),0);
+  const fmtBrl = v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const dataEntrega = p.data_entrega ? new Date(p.data_entrega+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  const numOrc = (p.id||'').slice(-6).toUpperCase();
+  const contatoFmt = (p.contato||'').replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3');
+  const linhas = prods.map((x,i)=>`
+    <tr style="background:${i%2===0?'#fff':'#f8fffe'}">
+      <td style="padding:10px 14px;border-bottom:1px solid #e2f0ee;">${x.produto||'—'}</td>
+      <td style="padding:10px 14px;text-align:center;border-bottom:1px solid #e2f0ee;">${Number(x.quantidade||0).toLocaleString('pt-BR')}</td>
+      <td style="padding:10px 14px;text-align:right;border-bottom:1px solid #e2f0ee;">${x.valor?fmtBrl(x.valor):''}</td>
+      <td style="padding:10px 14px;text-align:right;border-bottom:1px solid #e2f0ee;font-weight:700;color:#0d6e4e;">${x.precoFinal?fmtBrl(x.precoFinal):''}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orçamento #${numOrc}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0fdf8;color:#1a1a1a;font-size:13px;padding:20px}
+  .page{background:#fff;max-width:720px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,100,70,.12)}
+  .header{background:linear-gradient(135deg,#0d9e70 0%,#065f46 100%);padding:28px 32px;display:flex;justify-content:space-between;align-items:center}
+  .logo-wrap{display:flex;align-items:center;gap:14px}
+  .logo-img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.4);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .empresa-nome{font-size:20px;font-weight:800;color:#fff}
+  .empresa-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px}
+  .orcamento-num{text-align:right}
+  .orcamento-titulo{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px}
+  .orcamento-id{font-size:26px;font-weight:900;color:#a7f3d0;margin-top:3px}
+  .validade{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+  
+  .cliente-sec{padding:20px 32px;background:#f0fdf8;border-bottom:1px solid #d1fae5}
+  .sec-label{font-size:10px;font-weight:800;color:#065f46;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+  .cliente-nome{font-size:18px;font-weight:800;color:#065f46}
+  .cliente-info{font-size:12px;color:#555;margin-top:4px;display:flex;gap:16px;flex-wrap:wrap}
+  
+  .table-sec{padding:16px 32px 20px}
+  table{width:100%;border-collapse:collapse}
+  thead th{background:#065f46;color:#fff;padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;text-align:left}
+  thead th:nth-child(2){text-align:center}
+  thead th:nth-child(3),thead th:nth-child(4){text-align:right}
+  
+  .totals{padding:0 32px 20px;display:flex;justify-content:flex-end}
+  .totals-box{min-width:240px;background:#f0fdf8;border-radius:10px;padding:14px 18px;border:1px solid #d1fae5}
+  .tot-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#555}
+  .tot-row.main{border-top:2px solid #0d9e70;margin-top:8px;padding-top:10px;font-size:17px;font-weight:900;color:#065f46}
+  
+  .obs-sec{padding:0 32px 20px}
+  .obs-box{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;font-size:12px;color:#444;line-height:1.5}
+  
+  .footer-actions{padding:16px 32px;background:#f9fafb;display:flex;gap:10px;border-top:1px solid #e5e7eb}
+  .btn-print{background:#065f46;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn-wpp{background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .footer-bar{background:#065f46;padding:12px 32px;text-align:center;font-size:10px;color:rgba(255,255,255,.5)}
+  
+  @media print{
+    body{background:#fff;padding:0}
+    .footer-actions{display:none}
+    .page{box-shadow:none;border-radius:0}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo-wrap">
+      <img class="logo-img" src="LOGO_SRC" alt="Bazzani Mudas">
+      <div>
+        <div class="empresa-nome">BAZZANI MUDAS</div>
+        <div class="empresa-sub">Viveiro de Mudas · Santo Antônio de Posse, SP</div>
+      </div>
+    </div>
+    <div class="orcamento-num">
+      <div class="orcamento-titulo">Orçamento</div>
+      <div class="orcamento-id">#${numOrc}</div>
+      <div class="validade">Emitido em ${dataHoje}</div>
+    </div>
+  </div>
+
+  <div class="cliente-sec">
+    <div class="sec-label">📦 Para</div>
+    <div class="cliente-nome">${p.cliente||'—'}</div>
+    <div class="cliente-info">
+      ${contatoFmt?`<span>📞 ${contatoFmt}</span>`:''}
+      ${p.data_entrega?`<span>📅 Entrega: ${dataEntrega}</span>`:''}
+      ${p.canal?`<span>${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span>`:''}
+    </div>
+  </div>
+
+  <div class="table-sec">
+    <table>
+      <thead><tr>
+        <th>Produto / Muda</th><th style="text-align:center">Qtd.</th><th style="text-align:right">R$ / un.</th><th style="text-align:right">Total</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+  </div>
+
+  <div class="totals">
+    <div class="totals-box">
+      <div class="tot-row"><span>Total de itens</span><span>${prods.length}</span></div>
+      <div class="tot-row"><span>Total de unidades</span><span>${totalQtd.toLocaleString('pt-BR')}</span></div>
+      <div class="tot-row main"><span>TOTAL</span><span>${fmtBrl(totalVenda)}</span></div>
+    </div>
+  </div>
+
+  ${p.obs?`<div class="obs-sec"><div class="sec-label">📝 Obs.</div><div class="obs-box">${p.obs}</div></div>`:''}
+
+  <div class="footer-actions">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    ${(p.contato)?`<a class="btn-wpp" href="https://wa.me/55${(p.contato).replace(/\D/g,'')}?text=Olá ${encodeURIComponent(p.cliente||'')}! Segue seu orçamento Bazzani Mudas nº ${numOrc}." target="_blank">💬 Enviar no WhatsApp</a>`:''}
+  </div>
+  <div class="footer-bar">CNPJ: 55.034.922/0001-01 · bazzanimudas@gmail.com · Santo Antônio de Posse, SP</div>
+</div>
+</body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(html.replace('LOGO_SRC', + logo + ));
+  win.document.close();
+}
 
 async function excluirPedido(pedidoId){
   if(!confirm('Tem certeza que deseja excluir este pedido?')) return;
