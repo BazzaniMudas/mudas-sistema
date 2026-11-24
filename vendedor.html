@@ -259,9 +259,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
               </select>
             </div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="field">
+              <label>🚛 Transporte</label>
+              <select id="pTransporte">
+                <option value="">— Selecionar —</option>
+                <option value="Transportadora">🚚 Transportadora</option>
+                <option value="Retirada">🏭 Retirada no box</option>
+                <option value="Motoboy">🏍️ Motoboy</option>
+                <option value="Correios">📦 Correios</option>
+                <option value="Uber/Rappi">📱 Uber / Rappi</option>
+                <option value="A definir">❓ A definir</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>🚪 Doca / Local</label>
+              <input type="text" id="pDoca" placeholder="Ex: Doca 3, Galpão B" autocomplete="off">
+            </div>
+          </div>
           <div class="field">
-            <label>Observações</label>
-            <textarea id="pObs" placeholder="Alguma observação? (opcional)"></textarea>
+            <label>📝 Observações internas</label>
+            <textarea id="pObs" placeholder="Instruções internas (não aparece no controle do cliente)"></textarea>
           </div>
         </div>
 
@@ -358,7 +376,7 @@ function fazerLogin(){
     else sessionStorage.setItem('vend_ok','1');
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
-    iniciarApp();
+    iniciarAppComPreload();
   } else {
     document.getElementById('loginErro').textContent='Senha incorreta.';
     document.getElementById('senhaInput').value='';
@@ -556,6 +574,8 @@ async function enviarPedido(e){
     contato:      document.getElementById('pContato').value.replace(/\D/g,'')||null,
     cliente_id:   (window._clienteSelecionado?.id)||null,
     desconto:     Number(document.getElementById('pDesconto')?.value)||0,
+    transporte:   document.getElementById('pTransporte').value||null,
+    doca:         document.getElementById('pDoca').value.trim()||null,
     status:       'pendente'
   };
 
@@ -615,6 +635,8 @@ async function editarPedido(pedidoId){
   document.getElementById('pCanal').value=data.canal||'digital';
   document.getElementById('pFornecedor').value=data.fornecedor||'';
   if(document.getElementById('pDesconto')) document.getElementById('pDesconto').value=data.desconto||0;
+  if(document.getElementById('pTransporte')) document.getElementById('pTransporte').value=data.transporte||'';
+  if(document.getElementById('pDoca')) document.getElementById('pDoca').value=data.doca||'';
   recalcVenda();
   // Remove sufixo "Fornecedor: xxx" do obs
   const obsLimpo=(data.obs||'').replace(/\s*\|\s*Fornecedor:.*$/,'').trim();
@@ -1136,11 +1158,17 @@ async function excluirPedido(pedidoId){
   if(el) el.remove();
 }
 
+function iniciarAppComPreload(){
+  iniciarApp();
+  // Pré-carrega clientes em background para autocomplete instantâneo
+  setTimeout(()=>{ _carregarClientes().catch(()=>{}); }, 800);
+}
+
 // Auto-login
 if(localStorage.getItem('vend_ok')==='1' || sessionStorage.getItem('vend_ok')==='1'){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
-  iniciarApp();
+  iniciarAppComPreload();
 }
 </script>
 </body>
