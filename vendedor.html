@@ -230,9 +230,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <!-- DADOS DO PEDIDO -->
         <div class="card">
           <div class="card-title">📋 Dados do Pedido</div>
-          <div class="field">
+          <div class="field" style="position:relative;">
             <label>Nome do Cliente *</label>
-            <input type="text" id="pCliente" placeholder="Ex: João Silva" required autocomplete="off">
+            <input type="text" id="pCliente" placeholder="Ex: João Silva" required autocomplete="off" oninput="_buscaCliente(this.value)">
+            <div id="clienteDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #16a34a;border-radius:10px;z-index:1000;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);"></div>
           </div>
           <div class="field">
             <label>WhatsApp do Cliente</label>
@@ -523,6 +524,7 @@ async function enviarPedido(e){
     canal:        document.getElementById('pCanal').value,
     vendedor:     document.getElementById('pVendedor').value,
     contato:      document.getElementById('pContato').value.replace(/\D/g,'')||null,
+    cliente_id:   (window._clienteSelecionado?.id)||null,
     status:       'pendente'
   };
 
@@ -696,6 +698,46 @@ function instalarApp(){
 function _enviarOrcWpp(wppNum, wppMsg){
   window.open('https://wa.me/'+wppNum+'?text='+wppMsg,'_blank');
 }
+
+// ── AUTOCOMPLETE CLIENTES ────────────────────────────
+let _clientesCache = null;
+async function _carregarClientes(){
+  if(_clientesCache) return _clientesCache;
+  const {data} = await sb.from('clientes').select('id,nome,fantasia,cnpj_cpf,cidade,uf,fone,celular,email,endereco,numero,complemento,bairro,cep').eq('situacao','Ativo').order('nome');
+  _clientesCache = data || [];
+  return _clientesCache;
+}
+async function _buscaCliente(q){
+  const dd = document.getElementById('clienteDropdown');
+  if(!q||q.length<2){ dd.style.display='none'; return; }
+  const lista = await _carregarClientes();
+  const ql = q.toLowerCase();
+  const res = lista.filter(c=>(c.nome||'').toLowerCase().includes(ql)||(c.fantasia||'').toLowerCase().includes(ql)||(c.cnpj_cpf||'').includes(q)).slice(0,8);
+  if(!res.length){ dd.style.display='none'; return; }
+  dd.innerHTML = res.map(c=>`
+    <div onclick="_selecionarCliente('${c.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#fff'">
+      <div style="font-weight:700;font-size:14px;color:#1a1a2e;">${c.nome}</div>
+      ${c.fantasia?`<div style="font-size:11px;color:#6b7280;">${c.fantasia}</div>`:''}
+      <div style="font-size:11px;color:#9ca3af;">${[c.cidade,c.uf].filter(Boolean).join(' · ')}${c.cnpj_cpf?' · '+c.cnpj_cpf:''}</div>
+    </div>`).join('');
+  dd.style.display='block';
+}
+async function _selecionarCliente(id){
+  const lista = await _carregarClientes();
+  const c = lista.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('pCliente').value = c.nome;
+  document.getElementById('clienteDropdown').style.display='none';
+  // Preenche contato se disponível
+  const tel = (c.celular||c.fone||'').replace(/\D/g,'');
+  if(tel) document.getElementById('pContato').value = tel;
+  // Guarda dados do cliente para usar no controle
+  window._clienteSelecionado = c;
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#clienteDropdown')&&!e.target.closest('#pCliente'))
+    document.getElementById('clienteDropdown').style.display='none';
+});
 
 // ── VOZ ──────────────────────────────────────────────
 function _configChave(){
