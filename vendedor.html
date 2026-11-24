@@ -278,8 +278,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div id="listaProdutos"></div>
           <button type="button" class="btn-add" onclick="addProduto()">+ Adicionar produto</button>
           <div class="total-box">
-            <span class="total-label">💰 Total da venda</span>
+            <span class="total-label">💰 Subtotal</span>
             <span class="total-value" id="totalVenda">R$ 0,00</span>
+          </div>
+          <!-- DESCONTO -->
+          <div style="margin-top:8px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:13px;font-weight:700;color:#92400e;">🏷️ Desconto:</span>
+              <input type="number" id="pDesconto" min="0" max="100" step="0.5" placeholder="0"
+                style="width:68px;padding:7px 10px;border:1.5px solid #fed7aa;border-radius:8px;font-size:15px;font-weight:800;text-align:center;color:#c2410c;outline:none;background:#fff;"
+                oninput="recalcVenda()">
+              <span style="font-size:14px;color:#92400e;font-weight:700;">%</span>
+              <span id="descontoValor" style="font-size:13px;color:#dc2626;font-weight:700;display:none;margin-left:4px;"></span>
+            </div>
+            <div id="totalFinalBox" style="display:none;margin-top:10px;padding-top:10px;border-top:1.5px solid #fed7aa;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;font-weight:700;color:#15803d;">💰 Total com desconto</span>
+              <span id="totalFinal" style="font-size:21px;font-weight:900;color:#15803d;">R$ 0,00</span>
+            </div>
           </div>
         </div>
 
@@ -400,6 +415,21 @@ function recalcVenda(){
     total+=sub;
   });
   document.getElementById('totalVenda').textContent=brl(total);
+  const pct = Number(document.getElementById('pDesconto')?.value)||0;
+  const dvEl = document.getElementById('descontoValor');
+  const tfBox = document.getElementById('totalFinalBox');
+  const tfEl = document.getElementById('totalFinal');
+  if(pct>0 && total>0){
+    const descVal = total*(pct/100);
+    const finalVal = total-descVal;
+    dvEl.textContent = '− '+brl(descVal);
+    dvEl.style.display='inline';
+    tfBox.style.display='flex';
+    tfEl.textContent=brl(finalVal);
+  } else {
+    dvEl.style.display='none';
+    tfBox.style.display='none';
+  }
 }
 
 function recalcForn(){
@@ -525,6 +555,7 @@ async function enviarPedido(e){
     vendedor:     document.getElementById('pVendedor').value,
     contato:      document.getElementById('pContato').value.replace(/\D/g,'')||null,
     cliente_id:   (window._clienteSelecionado?.id)||null,
+    desconto:     Number(document.getElementById('pDesconto')?.value)||0,
     status:       'pendente'
   };
 
@@ -583,6 +614,8 @@ async function editarPedido(pedidoId){
   if(flatpickrInst&&data.data_entrega) flatpickrInst.setDate(data.data_entrega);
   document.getElementById('pCanal').value=data.canal||'digital';
   document.getElementById('pFornecedor').value=data.fornecedor||'';
+  if(document.getElementById('pDesconto')) document.getElementById('pDesconto').value=data.desconto||0;
+  recalcVenda();
   // Remove sufixo "Fornecedor: xxx" do obs
   const obsLimpo=(data.obs||'').replace(/\s*\|\s*Fornecedor:.*$/,'').trim();
   document.getElementById('pObs').value=obsLimpo;
