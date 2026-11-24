@@ -702,8 +702,10 @@ function _enviarOrcWpp(wppNum, wppMsg){
 // ── AUTOCOMPLETE CLIENTES ────────────────────────────
 let _clientesCache = null;
 async function _carregarClientes(){
-  if(_clientesCache) return _clientesCache;
-  const {data} = await sb.from('clientes').select('id,nome,fantasia,cnpj_cpf,cidade,uf,fone,celular,email,endereco,numero,complemento,bairro,cep').eq('situacao','Ativo').order('nome');
+  if(_clientesCache && _clientesCache.length>0) return _clientesCache;
+  if(!sb) return [];
+  const {data,error} = await sb.from('clientes').select('id,nome,fantasia,cnpj_cpf,cidade,uf,fone,celular,email,endereco,numero,complemento,bairro,cep').order('nome');
+  if(error){ console.error('clientes erro:',error); return []; }
   _clientesCache = data || [];
   return _clientesCache;
 }
