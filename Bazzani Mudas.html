@@ -736,6 +736,59 @@
   .cli-tag.prog{background:#FFF0D6;color:#B45A00;}
   .cli-tag.neg{background:#E0F0FF;color:#1A5FA8;}
   .cli-tag.encerrado{background:#F0F0F0;color:#6B7280;}
+
+  /* ── MODO PRIVACIDADE ───────────────────────────────────────────── */
+  #btnPrivacy{margin-left:auto;background:transparent;border:none;cursor:pointer;padding:6px 10px;opacity:.65;line-height:0;border-radius:8px;transition:opacity .15s,background .15s;color:inherit;display:flex;align-items:center;}
+  #btnPrivacy:hover{opacity:1;background:rgba(255,255,255,.18);}
+  #btnPrivacy svg{display:block;}
+
+  body.privacy-mode .brl-valor,
+  body.privacy-mode .dash-kpi.geral .dash-kpi-val,
+  body.privacy-mode .dash-kpi.geral .dash-kpi-badge,
+  body.privacy-mode .dash-kpi.org .dash-kpi-val,
+  body.privacy-mode .dash-kpi.org .dash-kpi-badge,
+  body.privacy-mode .dash-kpi.dig .dash-kpi-val,
+  body.privacy-mode .dash-kpi.dig .dash-kpi-badge,
+  body.privacy-mode .cfin-valor,
+  body.privacy-mode .cfin-anual-valor,
+  body.privacy-mode .cfin-anual-margem,
+  body.privacy-mode .prog-valor-total-num,
+  body.privacy-mode .prog-valor-entregue,
+  body.privacy-mode .prog-stat-val,
+  body.privacy-mode .cstat.fin-bruto .cstat-valor,
+  body.privacy-mode .cstat.fin-lucro .cstat-valor {
+    color: transparent !important;
+    text-shadow: none !important;
+    position: relative;
+    user-select: none !important;
+    pointer-events: none !important;
+    border-radius: 6px;
+    transition: color .25s ease;
+  }
+  body.privacy-mode .brl-valor::before,
+  body.privacy-mode .dash-kpi.geral .dash-kpi-val::before,
+  body.privacy-mode .dash-kpi.geral .dash-kpi-badge::before,
+  body.privacy-mode .dash-kpi.org .dash-kpi-val::before,
+  body.privacy-mode .dash-kpi.org .dash-kpi-badge::before,
+  body.privacy-mode .dash-kpi.dig .dash-kpi-val::before,
+  body.privacy-mode .dash-kpi.dig .dash-kpi-badge::before,
+  body.privacy-mode .cfin-valor::before,
+  body.privacy-mode .cfin-anual-valor::before,
+  body.privacy-mode .cfin-anual-margem::before,
+  body.privacy-mode .prog-valor-total-num::before,
+  body.privacy-mode .prog-valor-entregue::before,
+  body.privacy-mode .prog-stat-val::before,
+  body.privacy-mode .cstat.fin-bruto .cstat-valor::before,
+  body.privacy-mode .cstat.fin-lucro .cstat-valor::before {
+    content: '';
+    position: absolute;
+    inset: 2px -6px;
+    background: rgba(80,80,80,0.22);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border-radius: 8px;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -889,9 +942,13 @@
   <button data-tab="estoque">Programações</button>
   <button data-tab="contratos">Contratos</button>
   <button data-tab="negociando">Em negociação</button>
-  <button data-tab="ideias">Ideias</button>
+  <button data-tab="clientes">👥 Clientes</button>
   <button data-tab="envio">🚚 Envio<span id="badgePedidos" style="display:none;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:99px;padding:0 4px;margin-left:5px;vertical-align:middle;line-height:16px;text-align:center;"></span></button>
   <button data-tab="financeiro">💰 Financeiro</button>
+  <button id="btnPrivacy" onclick="_bmTogglePrivacy()" title="Ocultar/mostrar valores">
+    <svg id="iconPrivacyOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    <svg id="iconPrivacyClosed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+  </button>
 </nav>
 <div class="alertas-bar" id="alertasBar"></div>
 
@@ -1115,43 +1172,241 @@
   </section>
 
   <!-- IDEIAS -->
-  <section class="tab" id="tab-ideias">
-    <div class="panel">
-      <h2>Nova ideia / anotação</h2>
-      <form class="add-form" id="formIdeias">
-        <div class="field" style="max-width:140px;"><label>Data</label><input type="date" name="data" required></div>
-        <div class="field" style="flex:2;"><label>Ideia / Anotação</label><input type="text" name="texto" required></div>
-        <div class="field"><label>Categoria</label>
-          <select name="categoria">
-            <option>Negócios</option><option>Fornecedor</option><option>Digital</option><option>Financeiro</option>
-          </select>
-        </div>
-        <div class="field" style="max-width:130px;"><label>Canal</label>
-          <select name="canal">
-            <option value="organico">Orgânico</option>
-            <option value="digital">Digital</option>
-          </select>
-        </div>
-        <button class="btn" type="submit">+ Adicionar</button>
-      </form>
-    </div>
-    <div class="panel">
-      <table>
-        <thead><tr><th>Data</th><th>Ideia/Anotação</th><th>Categoria</th><th>Status</th><th>Canal</th><th></th></tr></thead>
-        <tbody id="bodyIdeias"></tbody>
-      </table>
-      <div class="empty-msg" id="emptyIdeias" style="display:none;">Nenhuma ideia registrada ainda.</div>
-    </div>
-  </section>
-
   <!-- FINANCEIRO -->
   <section class="tab" id="tab-financeiro">
     <div class="panel" id="painelFinanceiro"></div>
   </section>
 
+  <!-- CLIENTES E FORNECEDORES -->
+  <section class="tab" id="tab-clientes">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+        <div>
+          <h2 style="margin:0;">👥 Clientes e Fornecedores</h2>
+          <div class="sub" style="margin:4px 0 0;">Cadastros integrados com o sistema do vendedor</div>
+        </div>
+        <button id="cliAddBtn" onclick="_cliAbrirModal()" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;padding:11px 20px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(21,128,61,.3);">+ Novo Cadastro</button>
+      </div>
+
+      <!-- Sub-abas -->
+      <div style="display:flex;gap:0;border-bottom:2.5px solid #e5e7eb;margin:18px 0 16px;">
+        <button id="cliSubClientes" onclick="_cliSub('clientes')" style="padding:10px 24px;border:none;background:transparent;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;border-bottom:3px solid #16a34a;color:#16a34a;margin-bottom:-2.5px;">👤 Clientes <span id="cliCountBadge" style="background:#dcfce7;color:#15803d;border-radius:99px;padding:2px 8px;font-size:11px;margin-left:4px;">0</span></button>
+        <button id="cliSubForn" onclick="_cliSub('fornecedores')" style="padding:10px 24px;border:none;background:transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border-bottom:3px solid transparent;color:#6b7280;margin-bottom:-2.5px;">🏭 Fornecedores <span id="fornCountBadge" style="background:#f3f4f6;color:#6b7280;border-radius:99px;padding:2px 8px;font-size:11px;margin-left:4px;">0</span></button>
+      </div>
+
+      <!-- Busca + UF -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:200px;">
+          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;">🔍</span>
+          <input type="text" id="cliSearchInput" placeholder="Nome, CNPJ, cidade…" oninput="_cliRender()"
+            style="width:100%;box-sizing:border-box;padding:10px 14px 10px 34px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+        </div>
+        <select id="cliUfFiltro" onchange="_cliRender()"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;outline:none;background:#fff;min-width:90px;">
+          <option value="">Todos UFs</option>
+        </select>
+      </div>
+
+      <!-- Toggle de visualização -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span id="cliTotalTxt" style="font-size:13px;color:#6b7280;"></span>
+        <div style="display:flex;gap:4px;background:#f3f4f6;border-radius:10px;padding:3px;">
+          <button id="cliViewCards" onclick="_cliSetView('cards')"
+            style="padding:6px 14px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.1);">⊞ Cards</button>
+          <button id="cliViewLista" onclick="_cliSetView('lista')"
+            style="padding:6px 14px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:transparent;color:#6b7280;">☰ Lista</button>
+        </div>
+      </div>
+
+      <!-- Vista Cards -->
+      <div id="cliGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;"></div>
+
+      <!-- Vista Lista (tabela) -->
+      <div id="cliLista" style="display:none;border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+              <th style="padding:12px 16px;text-align:left;font-weight:800;color:#374151;white-space:nowrap;">Nome / Fantasia</th>
+              <th style="padding:12px 16px;text-align:left;font-weight:800;color:#374151;">CNPJ / CPF</th>
+              <th style="padding:12px 16px;text-align:left;font-weight:800;color:#374151;">Cidade / UF</th>
+              <th style="padding:12px 16px;text-align:left;font-weight:800;color:#374151;">Telefone</th>
+              <th style="padding:12px 16px;text-align:left;font-weight:800;color:#374151;">E-mail</th>
+              <th style="padding:12px 8px;text-align:center;font-weight:800;color:#374151;"></th>
+            </tr>
+          </thead>
+          <tbody id="cliListaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- MODAL CADASTRO — fora da section para sobrepor tudo -->
+  <div id="cliModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
+    <!-- Backdrop com blur -->
+    <div onclick="_cliFecharModal()" style="position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);"></div>
+    <!-- Painel -->
+    <div style="position:relative;background:#fff;border-radius:24px;width:100%;max-width:620px;margin:20px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.28);display:flex;flex-direction:column;">
+      <!-- Header colorido -->
+      <div id="cliModalHeader" style="background:linear-gradient(135deg,#14532d,#16a34a);padding:24px 28px 20px;border-radius:24px 24px 0 0;flex-shrink:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div id="cliModalTitulo" style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.3px;">Novo Cliente</div>
+            <div id="cliModalSub" style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px;">Preencha os dados do cadastro</div>
+          </div>
+          <button onclick="_cliFecharModal()" style="background:rgba(255,255,255,.15);border:none;border-radius:12px;width:38px;height:38px;font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">✕</button>
+        </div>
+      </div>
+      <!-- Formulário -->
+      <form id="cliModalForm" onsubmit="_cliSalvar(event)" style="padding:24px 28px;display:flex;flex-direction:column;gap:0;">
+        <input type="hidden" id="cliModalId">
+        <input type="hidden" id="cliModalTipo" value="cliente">
+
+        <!-- Seção: Identificação -->
+        <div style="font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📋 Identificação</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Razão Social / Nome *</label>
+            <input type="text" id="cliMNome" required placeholder="Ex: Flores Brasil Ltda"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Nome Fantasia</label>
+            <input type="text" id="cliMFantasia" placeholder="Nome comercial / apelido"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">CNPJ / CPF</label>
+            <input type="text" id="cliMCnpj" placeholder="00.000.000/0001-00"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Tipo de Pessoa</label>
+            <select id="cliMTipoPessoa"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+              <option value="J">Jurídica (empresa)</option><option value="F">Física (pessoa)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Seção: Endereço -->
+        <div style="font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📍 Endereço</div>
+        <div style="display:grid;grid-template-columns:2fr 80px;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Rua / Avenida</label>
+            <input type="text" id="cliMEndereco" placeholder="Nome da rua"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Nº</label>
+            <input type="text" id="cliMNumero" placeholder="123"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Complemento</label>
+            <input type="text" id="cliMCompl" placeholder="Sala, Bloco…"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Bairro</label>
+            <input type="text" id="cliMBairro"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">CEP</label>
+            <input type="text" id="cliMCep" placeholder="00000-000"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 60px;gap:12px;margin-bottom:20px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Cidade</label>
+            <input type="text" id="cliMCidade"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">UF</label>
+            <input type="text" id="cliMUf" maxlength="2" placeholder="SP"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;text-transform:uppercase;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+        </div>
+
+        <!-- Seção: Contato -->
+        <div style="font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📞 Contato</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">Telefone</label>
+            <input type="tel" id="cliMFone" placeholder="(11) 3333-4444"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">WhatsApp</label>
+            <input type="tel" id="cliMCelular" placeholder="(11) 99999-8888"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;font-weight:700;color:#374151;">E-mail</label>
+            <input type="email" id="cliMEmail" placeholder="email@empresa.com"
+              style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;"
+              onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+          </div>
+        </div>
+
+        <!-- Tipo de fornecedor (só aparece para fornecedor) -->
+        <div id="cliMTipoFornWrap" style="display:none;margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🏭 Tipo de Fornecedor</div>
+          <select id="cliMTipoForn"
+            style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+            <option value="Viveiro">🌿 Viveiro</option>
+            <option value="Atacadista">📦 Atacadista</option>
+            <option value="Produtor">🌱 Produtor Rural</option>
+            <option value="Importador">✈️ Importador</option>
+            <option value="Outro">🏷️ Outro</option>
+          </select>
+        </div>
+
+        <!-- Observações -->
+        <div style="font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📝 Observações</div>
+        <textarea id="cliMObs" rows="2" placeholder="Anotações internas, condições especiais…"
+          style="padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;resize:vertical;transition:border .15s;margin-bottom:20px;"
+          onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+
+        <div id="cliModalErro" style="color:#dc2626;font-size:13px;background:#fef2f2;padding:10px 14px;border-radius:10px;display:none;margin-bottom:12px;"></div>
+
+        <!-- Botões -->
+        <div style="display:flex;gap:10px;">
+          <button type="button" onclick="_cliFecharModal()"
+            style="flex:1;padding:13px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:#fff;color:#374151;transition:background .15s;"
+            onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">Cancelar</button>
+          <button type="submit" id="cliModalSalvarBtn"
+            style="flex:2;background:linear-gradient(135deg,#16a34a,#14532d);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(21,128,61,.35);transition:opacity .15s;">
+            💾 Salvar Cadastro
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ENVIO -->
   <section class="tab" id="tab-envio">
-    <div class="panel" id="painelEnvio"><div id="_painelPedidosVendedor" style="display:none"></div></div>
+    <div id="_painelPedidosVendedor" style="display:none;padding:12px 16px 0"></div>
+    <div class="panel" id="painelEnvio"></div>
   </section>
 
 
@@ -1166,7 +1421,7 @@
     <form id="formEnvioEdit">
       <input type="hidden" name="envioEditId">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div class="forn-field"><label>Cliente</label><input type="text" name="eeCliente" required autocomplete="off" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(59,130,246,.3);font-size:13px;font-family:inherit;color:#1e3a8a;background:#fff;outline:none;"></div>
+        <div class="forn-field"><label>Cliente</label><input type="text" name="eeCliente" required autocomplete="new-password" data-cli-ac="1" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(59,130,246,.3);font-size:13px;font-family:inherit;color:#1e3a8a;background:#fff;outline:none;"></div>
         <div class="forn-field"><label>&#x1F4C5; Data de entrega</label><input type="date" name="eeData" required style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(59,130,246,.3);font-size:13px;font-family:inherit;color:#1e3a8a;background:#fff;outline:none;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
@@ -1263,6 +1518,247 @@ function salvarEstado(){
 const _SUPA_URL = 'https://dtmfyupeotctxhjhtmbv.supabase.co';
 const _SUPA_KEY = 'sb_publishable_RyyKNsnIKJNGa6OQ_Z9Yiw_9Bc_uf-r';
 
+
+async function _gerarControlePedido(envId){
+  const env = (state.envios||[]).find(x=>x.id===envId);
+  if(!env) return;
+
+  // Busca cadastro completo do cliente
+  let cad = null;
+  if(env.cliente_id){
+    try{
+      const {data} = await window._sb.from('clientes').select('*').eq('id',env.cliente_id).single();
+      cad = data;
+    }catch(e){}
+  }
+  // Fallback: busca por nome no cache (para envios antigos sem cliente_id)
+  if(!cad && env.cliente){
+    try{
+      const lista = await _bmCarregarClientes();
+      const nq = (env.cliente||'').trim().toLowerCase();
+      cad = lista.find(c=>(c.nome||'').toLowerCase()===nq||(c.fantasia||'').toLowerCase()===nq)||null;
+    }catch(e){}
+  }
+
+  const prods = (env.produtos||[]).filter(p=>p.produto);
+  const totalPed = prods.reduce((s,p)=>s+(Number(p.precoFinal)||0),0);
+  const totalQtd = prods.reduce((s,p)=>s+(Number(p.quantidade)||0),0);
+  const descontoPct = Number(env.desconto)||0;
+  const descontoVal = descontoPct>0 ? totalPed*(descontoPct/100) : 0;
+  const totalFinal = totalPed - descontoVal;
+  const dataEntrega = env.dataEntrega ? new Date(env.dataEntrega+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  const numPedido = env.id.slice(-6).toUpperCase();
+  const fmtBrl = v => Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const linhasProds = prods.map((p,i)=>`
+    <tr class="${i%2===0?'par':'impar'}">
+      <td>${String(i+1).padStart(3,'0')}</td>
+      <td>${p.produto||'—'}</td>
+      <td style="text-align:center;">un.</td>
+      <td style="text-align:center;">${Number(p.quantidade||0).toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;">${p.valor?fmtBrl(p.valor):''}</td>
+      <td style="text-align:right;font-weight:700;">${p.precoFinal?fmtBrl(p.precoFinal):''}</td>
+    </tr>`).join('');
+
+  // Melhor número de telefone disponível: prioriza celular do cadastro, depois fone, telefone, contato manual
+  const _melhorTel = (cad?.celular||cad?.fone||cad?.telefone||env.contato||'').trim();
+  const contatoFmt = _melhorTel ? _melhorTel.replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3') : '';
+  const entregaInfo = env.entregaInfo||{};
+  const tipoEntrega = entregaInfo.tipo==='doca'?`Doca ${entregaInfo.docaNumero||''}`:
+    entregaInfo.tipo==='transportadora'?`Transportadora: ${entregaInfo.nomeTransportadora||''}`:
+    entregaInfo.tipo==='direta'?`Entrega direta${entregaInfo.motorista?' — '+entregaInfo.motorista:''}`:
+    entregaInfo.tipo==='retirada'?`Retirada${entregaInfo.responsavel?' — '+entregaInfo.responsavel:''}`:
+    entregaInfo.tipo==='aereo'?`Aéreo`:
+    env.transporte||'—';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pedido ${numPedido} — ${env.cliente}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:13px}
+  .page{background:#fff;max-width:800px;margin:20px auto;padding:0;box-shadow:0 2px 20px rgba(0,0,0,.1);border-radius:4px;overflow:hidden}
+  
+  /* HEADER */
+  .header{background:#1a2e1a;padding:24px 32px;display:flex;justify-content:space-between;align-items:center}
+  .logo-area{display:flex;align-items:center;gap:16px}
+  .logo-img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3)}
+  .empresa-nome{font-size:22px;font-weight:800;color:#fff;letter-spacing:.5px}
+  .empresa-info{font-size:11px;color:rgba(255,255,255,.65);line-height:1.6;margin-top:3px}
+  .doc-title{text-align:right}
+  .doc-title h1{font-size:20px;font-weight:800;color:#fff;letter-spacing:1px;text-transform:uppercase}
+  .doc-num{font-size:28px;font-weight:900;color:#c8e6c9;margin-top:4px}
+  
+  /* INFO BAR */
+  .info-bar{background:#2d5a2d;display:flex;gap:0;border-bottom:2px solid #1a2e1a}
+  .info-cell{flex:1;padding:10px 16px;border-right:1px solid rgba(255,255,255,.1)}
+  .info-cell:last-child{border-right:none}
+  .info-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px}
+  .info-value{font-size:13px;font-weight:700;color:#fff;margin-top:2px}
+  
+  /* CLIENTE */
+  .section{padding:20px 32px;border-bottom:1px solid #e8e8e8}
+  .section-title{font-size:10px;font-weight:800;color:#2d5a2d;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .section-title::after{content:'';flex:1;height:1px;background:#e0e0e0}
+  .cliente-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .campo{background:#f9f9f9;border-radius:6px;padding:10px 14px;border-left:3px solid #2d5a2d}
+  .campo-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .campo-valor{font-size:14px;font-weight:700;color:#1a1a1a;margin-top:2px}
+  .campo-valor.destaque{color:#2d5a2d;font-size:16px}
+  
+  /* TABELA */
+  .table-wrap{padding:0 32px 20px}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  thead tr{background:#2d5a2d}
+  thead th{padding:10px 12px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;text-align:left}
+  thead th:nth-child(3),thead th:nth-child(4){text-align:center}
+  thead th:nth-child(5),thead th:nth-child(6){text-align:right}
+  tbody tr.par{background:#fff}
+  tbody tr.impar{background:#f7faf7}
+  tbody td{padding:9px 12px;font-size:13px;color:#333;border-bottom:1px solid #eee}
+  tbody tr:last-child td{border-bottom:none}
+  
+  /* TOTAIS */
+  .totais{background:#f7faf7;border-top:2px solid #2d5a2d;padding:16px 32px;display:flex;justify-content:flex-end}
+  .totais-box{min-width:260px}
+  .total-linha{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#555}
+  .total-linha.principal{border-top:2px solid #2d5a2d;margin-top:8px;padding-top:10px;font-size:16px;font-weight:900;color:#1a2e1a}
+  
+  /* OBS + ENTREGA */
+  .rodape-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 32px;background:#fafafa;border-top:1px solid #e8e8e8}
+  .obs-box{background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:12px;min-height:60px}
+  .obs-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .obs-texto{font-size:12px;color:#444;line-height:1.5}
+  
+  /* FOOTER */
+  .footer{background:#1a2e1a;padding:12px 32px;display:flex;justify-content:space-between;align-items:center}
+  .footer-txt{font-size:10px;color:rgba(255,255,255,.5)}
+  .footer-cnpj{font-size:11px;font-weight:700;color:rgba(255,255,255,.7)}
+  .status-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+  .status-pago{background:#dcfce7;color:#15803d}
+  .status-pendente{background:#fef9c3;color:#854d0e}
+  
+  @media print{
+    body{background:#fff}
+    .page{box-shadow:none;margin:0;border-radius:0}
+    .btn-print,.btn-wpp{display:none!important}
+  }
+  .acoes{padding:16px 32px;display:flex;gap:10px;background:#f0f4f0;border-top:1px solid #ddd}
+  .btn-print{background:#1a2e1a;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn-wpp{background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo-area">
+      <img class="logo-img" src="LOGO_SRC" alt="Bazzani Mudas">
+      <div>
+        <div class="empresa-nome">BAZZANI MUDAS</div>
+        <div class="empresa-info">Holambra, SP · Box C25/C26<br>CNPJ: 55.034.922/0001-01</div>
+      </div>
+    </div>
+    <div class="doc-title">
+      <h1>Controle de Pedido</h1>
+      <div class="doc-num">#${numPedido}</div>
+    </div>
+  </div>
+
+  <div class="info-bar">
+    <div class="info-cell"><div class="info-label">Data do Pedido</div><div class="info-value">${dataHoje}</div></div>
+    <div class="info-cell"><div class="info-label">Data de Entrega</div><div class="info-value">${dataEntrega}</div></div>
+    ${env.vendedor?`<div class="info-cell"><div class="info-label">Vendedor</div><div class="info-value">${env.vendedor}</div></div>`:''}
+  </div>
+
+  <div class="section">
+    <div class="section-title">👤 Dados do Cliente</div>
+    <div class="cliente-grid">
+      <div class="campo" style="grid-column:1/-1"><div class="campo-label">Nome do Cliente</div><div class="campo-valor destaque">${cad?.fantasia||cad?.nome||env.cliente||'—'}</div></div>
+      ${cad?.fantasia&&cad?.nome?`<div class="campo"><div class="campo-label">Razão Social</div><div class="campo-valor">${cad.nome}</div></div>`:''}
+      ${cad?.cnpj_cpf?`<div class="campo"><div class="campo-label">CNPJ / CPF</div><div class="campo-valor">${cad.cnpj_cpf}</div></div>`:''}
+      ${(cad?.telefone||cad?.email)?`<div class="campo"><div class="campo-label">Contato</div><div class="campo-valor">${[cad.telefone,cad.email].filter(Boolean).join(' · ')}</div></div>`:(contatoFmt?`<div class="campo"><div class="campo-label">WhatsApp</div><div class="campo-valor">${contatoFmt}</div></div>`:'')}
+      ${cad&&(cad.endereco||cad.cidade)?`<div class="campo" style="grid-column:1/-1"><div class="campo-label">Endereço</div><div class="campo-valor">${[cad.endereco,cad.numero,cad.complemento,cad.bairro,cad.cidade,cad.uf,cad.cep].filter(Boolean).join(', ')}</div></div>`:''}
+      ${tipoEntrega&&tipoEntrega!=='—'?`<div class="campo"><div class="campo-label">Meio de Envio</div><div class="campo-valor">${tipoEntrega}</div></div>`:''}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🌱 Itens do Pedido</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Produto / Muda</th><th>Un.</th><th>Qtd.</th><th>R$/un.</th><th>Total</th>
+      </tr></thead>
+      <tbody>${linhasProds}</tbody>
+    </table>
+  </div>
+
+  <div class="totais">
+    <div class="totais-box">
+      <div class="total-linha"><span>Nº de itens</span><span>${prods.length}</span></div>
+      <div class="total-linha"><span>Total de unidades</span><span>${totalQtd.toLocaleString('pt-BR')}</span></div>
+      ${descontoPct>0?`
+      <div class="total-linha"><span>Subtotal</span><span>${fmtBrl(totalPed)}</span></div>
+      <div class="total-linha" style="color:#dc2626;font-weight:700;"><span>Desconto (${descontoPct}%)</span><span>− ${fmtBrl(descontoVal)}</span></div>
+      `:''}
+      <div class="total-linha principal"><span>TOTAL DO PEDIDO</span><span>${fmtBrl(totalFinal)}</span></div>
+    </div>
+  </div>
+
+  ${(()=>{
+    const partes = [];
+    if(env.transporte) partes.push(`<div><div class="obs-label">🚛 Meio de Transporte</div><div class="obs-box"><div class="obs-texto">${env.transporte}</div></div></div>`);
+    if(env.doca) partes.push(`<div><div class="obs-label">🚪 Doca / Local</div><div class="obs-box"><div class="obs-texto">${env.doca}</div></div></div>`);
+    return partes.length ? `<div class="rodape-grid">${partes.join('')}</div>` : '';
+  })()}
+
+  <div class="acoes">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    ${(()=>{const _wppNum=_melhorTel.replace(/\D/g,'');return _wppNum?`<a class="btn-wpp" href="https://wa.me/55${_wppNum}?text=Olá ${encodeURIComponent(env.cliente||'')}! Segue seu pedido Bazzani Mudas nº ${numPedido}." target="_blank">💬 Enviar no WhatsApp</a>`:'';})()} 
+  </div>
+
+  <div class="footer">
+    <div class="footer-txt">Bazzani Mudas · Viveiro · Holambra · Brasil</div>
+    <div class="footer-cnpj">CNPJ: 55.034.922/0001-01</div>
+  </div>
+</div>
+</body></html>`;
+
+  const _controleHtml = html.replace('LOGO_SRC','data:image/png;base64,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');
+  const _blob = new Blob([_controleHtml], {type:'text/html'});
+  const _blobUrl = URL.createObjectURL(_blob);
+  let _modal = document.getElementById('controleModal');
+  window._bmFecharControle = function(){
+    var _m = document.getElementById('controleModal');
+    if(!_m) return;
+    var _f = _m.querySelector('iframe');
+    if(_f && _f.src && _f.src.startsWith('blob:')) URL.revokeObjectURL(_f.src);
+    _m.style.display = 'none';
+  };
+  window._bmImprimirControle = function(){
+    var _fr = document.getElementById('controleModalIframe');
+    if(_fr && _fr.contentWindow) _fr.contentWindow.print();
+  };
+  if(!_modal){
+    _modal = document.createElement('div');
+    _modal.id = 'controleModal';
+    _modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;';
+    _modal.innerHTML = '<div style="position:relative;width:94vw;max-width:1100px;height:94vh;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.5);display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a4f29;color:#fff;flex-shrink:0;"><span style="font-weight:600;font-size:15px;">&#128203; Controle de Pedido</span><div style="display:flex;gap:8px;"><button id="controleModalImprimir" style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#128424; Imprimir</button><button id="controleModalFechar" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#10005; Fechar</button></div></div><iframe id="controleModalIframe" style="flex:1;border:none;"></iframe></div>';
+    document.body.appendChild(_modal);
+    document.getElementById('controleModalFechar').addEventListener('click', window._bmFecharControle);
+    document.getElementById('controleModalImprimir').addEventListener('click', window._bmImprimirControle);
+    _modal.addEventListener('click', function(e){if(e.target===_modal) window._bmFecharControle();});
+  }
+  const _iframe = _modal.querySelector('#controleModalIframe');
+  if(_iframe.src && _iframe.src.startsWith('blob:')) URL.revokeObjectURL(_iframe.src);
+  _iframe.src = _blobUrl;
+  _modal.style.display = 'flex';
+}
+
 function _syncDigital(){
   if(!window._sb) return;
   const enviosDigital = (state.envios||[]).filter(e=>(e.canal||'organico')==='digital');
@@ -1344,10 +1840,67 @@ function _renderPainelPedidos(){
     </div>`;
 }
 
-async function _importarPedido(id){
+let _modalImportPedidoId = null;
+
+function _importarPedido(id){
   const p = (window._pedidosData||[]).find(x=>x.id===id);
   if(!p) return;
-  if(!confirm(`Importar pedido de "${p.cliente}" como novo envio?`)) return;
+  _modalImportPedidoId = id;
+  const prodsVenda = (p.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
+  const prodsForn  = (p.produtos||[]).filter(x=>x._tipo==='fornecedor');
+  const dataFmt = p.data_entrega ? new Date(p.data_entrega+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  document.getElementById('_modalImportResumo').innerHTML =
+    `<div style="font-weight:800;font-size:15px;color:#1f2937;margin-bottom:4px;">👤 ${p.cliente}</div>`+
+    `<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📅 ${dataFmt} &nbsp;·&nbsp; ${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</div>`+
+    `<div style="font-size:12px;color:#374151;">🌱 ${prodsVenda.map(x=>`${x.produto||''} (${x.quantidade||''} un.)`).join(', ')||'—'}</div>`+
+    (p.fornecedor||prodsForn.length?`<div style="font-size:12px;color:#92400e;margin-top:4px;">🏭 Fornecedor: ${p.fornecedor||prodsForn[0]?.variedade||'—'}</div>`:'');
+  document.getElementById('_modalMeioEnvio').value='';
+  document.getElementById('_modalCamposExtra').innerHTML='';
+  document.getElementById('_modalImport').style.display='flex';
+}
+
+function _fecharModalImport(){
+  document.getElementById('_modalImport').style.display='none';
+  _modalImportPedidoId=null;
+}
+
+function _modalAtualizarCampos(){
+  const tipo=document.getElementById('_modalMeioEnvio').value;
+  const s='width:100%;border:1.5px solid #e5e7eb;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;background:#f9fafb;';
+  const lbl='font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px;';
+  let html='';
+  if(tipo==='doca')
+    html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div><label style="${lbl}">Nº da Doca</label><input id="_modalDoca" type="text" placeholder="Ex: 12" style="${s}"></div>
+      <div><label style="${lbl}">Caminhoneiro</label><input id="_modalCaminhoneiro" type="text" placeholder="Nome (opcional)" style="${s}"></div>
+    </div>`;
+  else if(tipo==='transportadora')
+    html=`<div style="margin-bottom:12px;"><label style="${lbl}">Nome da Transportadora</label><input id="_modalTransp" type="text" placeholder="Ex: Jadlog, Correios..." style="${s}"></div>`;
+  else if(tipo==='direta')
+    html=`<div style="margin-bottom:12px;"><label style="${lbl}">Motorista / Motoboy</label><input id="_modalMotorista" type="text" placeholder="Nome (opcional)" style="${s}"></div>`;
+  else if(tipo==='retirada')
+    html=`<div style="margin-bottom:12px;"><label style="${lbl}">Responsável pela retirada</label><input id="_modalResponsavel" type="text" placeholder="Nome (opcional)" style="${s}"></div>`;
+  document.getElementById('_modalCamposExtra').innerHTML=html;
+}
+
+async function _confirmarImportacao(){
+  const id=_modalImportPedidoId;
+  const p=(window._pedidosData||[]).find(x=>x.id===id);
+  if(!p) return;
+  const tipo=document.getElementById('_modalMeioEnvio').value;
+  const entregaInfo={tipo};
+  if(tipo==='doca'){
+    entregaInfo.docaNumero=document.getElementById('_modalDoca')?.value||'';
+    entregaInfo.caminhoneiro=document.getElementById('_modalCaminhoneiro')?.value||'';
+  } else if(tipo==='transportadora'){
+    entregaInfo.nomeTransportadora=document.getElementById('_modalTransp')?.value||'';
+  } else if(tipo==='direta'){
+    entregaInfo.motorista=document.getElementById('_modalMotorista')?.value||'';
+  } else if(tipo==='retirada'){
+    entregaInfo.responsavel=document.getElementById('_modalResponsavel')?.value||'';
+  }
+  const prodsVenda=(p.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
+  const prodsForn =(p.produtos||[]).filter(x=>x._tipo==='fornecedor');
   if(!state.envios) state.envios=[];
   state.envios.push({
     id: uid(),
@@ -1356,17 +1909,24 @@ async function _importarPedido(id){
     cliente: p.cliente||'',
     canal: p.canal||'organico',
     vendedor: p.canal==='digital'?(p.vendedor||''):'',
-    entregaInfo: {},
+    entregaInfo,
     horarioMaximo: '',
-    produtos: (p.produtos||[]).map(x=>({produto:x.produto||'',quantidade:x.quantidade||0,valor:x.valor||0,precoFinal:x.precoFinal||0})),
+    produtos: prodsVenda.map(x=>({produto:x.produto||'',quantidade:x.quantidade||0,valor:x.valor||0,precoFinal:x.precoFinal||0})),
+    contato: p.contato||'',
+    cliente_id: p.cliente_id||null,
+    desconto: Number(p.desconto)||0,
+    transporte: p.transporte||'',
+    doca: p.doca||'',
+    fornecedorNome: p.fornecedor||'',
+    fornecedorProdutos: prodsForn.map(x=>({variedade:x.variedade||x.produto||'',quantidade:x.quantidade||0,custoUnitario:x.custoUnitario||0,totalCusto:x.totalCusto||(x.quantidade*x.custoUnitario)||0})),
     obs: p.obs||'',
   });
-  // Marcar como confirmado no Supabase
   await window._sb.from('pedidos_vendedor').update({status:'confirmado'}).eq('id',id);
-  window._pedidosData = (window._pedidosData||[]).filter(x=>x.id!==id);
-  window._pedidosPendentes = Math.max(0,(window._pedidosPendentes||1)-1);
+  window._pedidosData=(window._pedidosData||[]).filter(x=>x.id!==id);
+  window._pedidosPendentes=Math.max(0,(window._pedidosPendentes||1)-1);
   _atualizarBadgePedidos();
   salvarEstado();
+  _fecharModalImport();
   renderEnvio();
   toast('✅ Pedido importado!');
 }
@@ -1382,6 +1942,27 @@ async function _recusarPedido(id){
 }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function brl(v){ return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+// ── MODO PRIVACIDADE ─────────────────────────────────────────────────
+function _bmTogglePrivacy(){
+  const on = document.body.classList.toggle('privacy-mode');
+  try { localStorage.setItem('_bmPrivacy', on ? '1' : '0'); } catch(e){}
+  const open   = document.getElementById('iconPrivacyOpen');
+  const closed = document.getElementById('iconPrivacyClosed');
+  if(open)   open.style.display   = on ? 'none'  : '';
+  if(closed) closed.style.display = on ? ''      : 'none';
+}
+(function _bmRestorePrivacy(){
+  try {
+    if(localStorage.getItem('_bmPrivacy') === '1'){
+      document.body.classList.add('privacy-mode');
+      const open   = document.getElementById('iconPrivacyOpen');
+      const closed = document.getElementById('iconPrivacyClosed');
+      if(open)   open.style.display   = 'none';
+      if(closed) closed.style.display = '';
+    }
+  } catch(e){}
+})();
 function fmtDate(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
 function parseNum(s){ return Number(String(s).replace(/\./g,'').replace(',','.').replace(/[^\d.-]/g,''))||0; }
 function fmtQtd(n){ return (Number(n)||0).toLocaleString('pt-BR'); }
@@ -1405,6 +1986,7 @@ document.getElementById('tabs').addEventListener('click', e=>{
   document.getElementById('canalSwitcher').style.display = (btn.dataset.tab==='envio'||btn.dataset.tab==='financeiro') ? 'none' : '';
   if(btn.dataset.tab==='envio') renderEnvio();
   if(btn.dataset.tab==='financeiro') renderFinanceiro();
+  if(btn.dataset.tab==='clientes'){ _cliIniciar().then(()=>_cliSetView('lista')); }
 });
 
 // ---------- NEGOCIANDO (ANOTAÇÕES) ----------
@@ -1658,9 +2240,11 @@ document.getElementById('formEstoque').addEventListener('submit', e=>{
     dataPrimeira = f.dataPrimeira.value;
     entregas = calcularEntregas(qtdTotal, qtdPorLote, frequencia, dataPrimeira);
   }
+  const _cliInpEst = document.querySelector('#formEstoque [name="cliente"]');
   state.estoque.push({
     id: uid(),
     cliente: f.cliente.value,
+    cliente_id: _cliInpEst?.dataset?.clienteId || null,
     produto: f.produto.value,
     cor: (f.cor?.value||'').trim(),
     quantidadeTotal: qtdTotal,
@@ -2163,7 +2747,6 @@ document.getElementById('canalSwitcher').addEventListener('click', e=>{
   renderEstoque();
   renderDashboard();
   renderNegociando();
-  renderIdeias();
   renderContratos();
 });
 document.getElementById('painelProgramacoes').addEventListener('keydown', e=>{
@@ -2212,7 +2795,9 @@ document.getElementById('painelProgramacoes').addEventListener('submit', e=>{
     (prog.quantidadePorLote || prog.quantidadePorEntrega) !== novosDados.quantidadePorLote ||
     prog.frequencia !== novosDados.frequencia ||
     prog.dataPrimeira !== novosDados.dataPrimeira;
+  const _cliInpEdit = f.querySelector('[name="cliente"]');
   prog.cliente = f.cliente.value;
+  prog.cliente_id = _cliInpEdit?.dataset?.clienteId || prog.cliente_id || null;
   prog.produto = f.produto.value;
   prog.cor = (f.cor?.value||'').trim();
   prog.precoUnitario = Number(f.precoUnitario.value)||0;
@@ -2297,55 +2882,6 @@ document.getElementById('painelProgramacoes').addEventListener('click', e=>{
 });
 
 // ---------- IDEIAS ----------
-document.getElementById('formIdeias').addEventListener('submit', e=>{
-  e.preventDefault(); const f = e.target;
-  state.ideias.push({ id:uid(), data:f.data.value, texto:f.texto.value, categoria:f.categoria.value, status:'Para fazer', canal:f.canal.value });
-  salvarEstado(); f.reset(); renderTudo();
-});
-function statusClass(s){ return 'status-'+s.replace(/\s/g,''); }
-function renderIdeias(){
-  const body = document.getElementById('bodyIdeias');
-  const empty = document.getElementById('emptyIdeias');
-  body.innerHTML = '';
-  let listaI = state.ideias;
-  if(filtroCanal !== 'todos') listaI = listaI.filter(i => (i.canal||'organico') === filtroCanal);
-  empty.style.display = listaI.length ? 'none' : 'block';
-  const canalBadgeI = c => c==='digital'
-    ? `<span style="font-size:10px;font-weight:700;background:#1A3A5C;color:#6BAADC;border-radius:4px;padding:2px 7px;">Digital</span>`
-    : `<span style="font-size:10px;font-weight:700;background:#1C3320;color:#5A9E6F;border-radius:4px;padding:2px 7px;">Orgânico</span>`;
-  listaI.forEach(i=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="date" value="${i.data||''}" data-id="${i.id}" data-f="data" style="width:120px"></td>
-      <td><input type="text" value="${i.texto||''}" data-id="${i.id}" data-f="texto"></td>
-      <td><select data-id="${i.id}" data-f="categoria">
-        ${['Negócios','Fornecedor','Digital','Financeiro'].map(s=>`<option ${s===i.categoria?'selected':''}>${s}</option>`).join('')}
-      </select></td>
-      <td><select data-id="${i.id}" data-f="status">
-        ${['Para fazer','Em andamento','Concluído'].map(s=>`<option ${s===i.status?'selected':''}>${s}</option>`).join('')}
-      </select></td>
-      <td>${canalBadgeI(i.canal||'organico')}</td>
-      <td><button class="btn danger" data-del="${i.id}">Excluir</button></td>`;
-    body.appendChild(tr);
-  });
-}
-document.getElementById('bodyIdeias').addEventListener('input', e=>{
-  const t = e.target; if(!t.dataset.id) return;
-  const item = state.ideias.find(p=>p.id===t.dataset.id);
-  item[t.dataset.f] = t.value; salvarEstado();
-});
-document.getElementById('bodyIdeias').addEventListener('change', e=>{
-  const t = e.target; if(!t.dataset.id) return;
-  const item = state.ideias.find(p=>p.id===t.dataset.id);
-  item[t.dataset.f] = t.value; salvarEstado();
-});
-document.getElementById('bodyIdeias').addEventListener('click', e=>{
-  const id = e.target.dataset.del; if(!id) return;
-  if(!confirm('Excluir esta ideia?')) return;
-  state.ideias = state.ideias.filter(p=>p.id!==id);
-  salvarEstado(); renderTudo();
-});
-
 // ---------- FINANCEIRO (GRÁFICOS) ----------
 const PALETA_GRAFICO = ['#8A6D3F','#5E7A52','#B85C3E','#4A7AA6','#9A7AB0','#C9A227','#6E6657','#3F6FA6'];
 function svgBarras(dados, opts){
@@ -3475,201 +4011,286 @@ function renderClientes(){
 }
 
 // ---------- FINANCEIRO ----------
-let finFiltroStatus = 'todos'; // 'todos' | 'pagos' | 'pendentes'
-let finFiltroPeriodo = 'mes'; // 'mes' | 'mesant' | 'ano' | 'tudo'
-let finFiltroCanal  = 'todos'; // kept for compat
+let finFiltroPeriodo = 'mes';
+let finFiltroStatus  = 'todos';
+
+function _darBaixaFinanceiro(fonte, envId, progId, enId){
+  if(!confirm('Confirmar recebimento deste pagamento?')) return;
+  if(fonte==='envio'){
+    const env = (state.envios||[]).find(e=>e.id===envId);
+    if(env){ env.statusPagamento='Pago'; env.dataPagamento=new Date().toISOString().slice(0,10); }
+  } else {
+    const prog = (state.estoque||[]).find(p=>p.id===progId);
+    const en   = prog ? (prog.entregas||[]).find(e=>e.id===enId) : null;
+    if(en){ en.pago=true; en.dataPagamento=new Date().toISOString().slice(0,10); }
+  }
+  save();
+  renderFinanceiro();
+  toast('✅ Baixa registrada!');
+}
 
 function renderFinanceiro(){
   const el = document.getElementById('painelFinanceiro');
   if(!el) return;
 
-  const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const anoHoje = hoje.getFullYear();
-  const mesHoje = hoje.getMonth(); // 0-based
+  const mesHoje = hoje.getMonth();
 
-  // ── 1. Coleta de entradas
-  const entradas = [];
+  // ── 1. Coleta todas as entradas com canal
+  const todasEntradas = [];
 
   (state.estoque||[]).forEach(prog=>{
     if(prog.status==='cancelada') return;
     (prog.entregas||[]).forEach(en=>{
       if(!en.pago && !en.entregue) return;
-      const statusPag = en.pago ? 'pago' : 'pendente';
-      const dataPag   = en.dataPagamento || (en.pago ? en.data : '') || '';
-      const nomeProd  = (en.produto||prog.produto||'—') + ((en.cor||prog.cor) ? ` (${en.cor||prog.cor})` : '');
       const precoUnit = en.preco != null ? Number(en.preco) : (Number(prog.precoUnitario)||0);
-      const qtd       = Number(en.quantidade)||0;
-      entradas.push({
-        id: en.id, dataPag, dataRef: en.data||'',
-        cliente: prog.cliente||'—', descricao: nomeProd, qtd,
-        total: qtd * precoUnit, canal: prog.canal||'organico',
-        fonte: 'programacao', status: statusPag, _progId: prog.id, _enId: en.id
+      const qtd = Number(en.quantidade)||0;
+      todasEntradas.push({
+        id: en.id,
+        dataPag: en.dataPagamento||'', dataRef: en.data||'',
+        cliente: prog.cliente||'—',
+        descricao: (en.produto||prog.produto||'—') + ((en.cor||prog.cor)?` (${en.cor||prog.cor})`:''),
+        total: qtd * precoUnit,
+        canal: prog.canal||'organico',
+        status: en.pago ? 'pago' : 'pendente',
+        fonte: 'programacao', _progId: prog.id, _enId: en.id
       });
     });
   });
 
   (state.envios||[]).forEach(env=>{
-    const statusPag = env.statusPagamento==='Pago' ? 'pago' : 'pendente';
-    const dataPag   = env.dataPagamento || (statusPag==='pago' ? env.dataEntrega : '') || '';
-    const prods     = env.produtos||[];
-    const total     = prods.reduce((s,p)=>s+(Number(p.precoFinal)||Number(p.valor||0)*Number(p.quantidade||0)),0);
-    const qtdTotal  = prods.reduce((s,p)=>s+(Number(p.quantidade)||0),0);
-    const nomeDesc  = prods.length===1 ? (prods[0].produto||'—')
-      : prods.length>1 ? `${prods[0].produto||'—'} +${prods.length-1} mais` : '—';
-    const detalhe   = prods.length>1 ? prods.map(p=>`${p.produto}: ${Number(p.quantidade||0)} un.`).join(' · ') : '';
-    entradas.push({
-      id: env.id, dataPag, dataRef: env.dataEntrega||'',
-      cliente: env.cliente||'—', descricao: nomeDesc, detalhe,
-      qtd: qtdTotal, total, canal: env.canal||'organico',
-      fonte: 'envio', status: statusPag, _envId: env.id
+    const prods = env.produtos||[];
+    const subtotal = prods.reduce((s,p)=>s+(Number(p.precoFinal)||Number(p.valor||0)*Number(p.quantidade||0)),0);
+    const desc = Number(env.desconto)||0;
+    const total = desc>0 ? subtotal*(1-desc/100) : subtotal;
+    const nomes = prods.map(p=>p.produto||'').filter(Boolean);
+    todasEntradas.push({
+      id: env.id,
+      dataPag: env.dataPagamento||'', dataRef: env.dataEntrega||'',
+      cliente: env.cliente||'—',
+      descricao: nomes.length ? (nomes[0]+(nomes.length>1?` +${nomes.length-1} produto${nomes.length>2?'s':''}`:'')) : '—',
+      total,
+      canal: env.canal||'organico',
+      status: env.statusPagamento==='Pago' ? 'pago' : 'pendente',
+      fonte: 'envio', _envId: env.id,
+      desconto: desc
     });
   });
 
-  // ── 2. Período ativo
+  // ── 2. Filtro de período
   const periodos = {
-    mes:    { ini: `${anoHoje}-${String(mesHoje+1).padStart(2,'0')}-01`,    fim: `${anoHoje}-${String(mesHoje+1).padStart(2,'0')}-31`    },
-    mesant: (()=>{ const d=new Date(anoHoje,mesHoje-1,1); return { ini:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, fim:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-31` }; })(),
-    ano:    { ini: `${anoHoje}-01-01`, fim: `${anoHoje}-12-31` },
-    tudo:   { ini: '', fim: '' }
+    mes:    {ini:`${anoHoje}-${String(mesHoje+1).padStart(2,'0')}-01`, fim:`${anoHoje}-${String(mesHoje+1).padStart(2,'0')}-31`},
+    mesant: (()=>{const d=new Date(anoHoje,mesHoje-1,1);return{ini:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`,fim:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-31`};})(),
+    ano:    {ini:`${anoHoje}-01-01`,fim:`${anoHoje}-12-31`},
+    tudo:   {ini:'',fim:''}
   };
-  const per = periodos[finFiltroPeriodo] || periodos.mes;
-  const labelPeriodo = {mes:'Este mês', mesant:'Mês passado', ano:`Ano ${anoHoje}`, tudo:'Tudo'}[finFiltroPeriodo];
+  const per = periodos[finFiltroPeriodo]||periodos.mes;
+  const lblPer = {mes:'Este mês',mesant:'Mês passado',ano:`Ano ${anoHoje}`,tudo:'Todo o histórico'}[finFiltroPeriodo];
 
-  // ── 3. Filtrar por período + status
-  function passaPeriodo(e){
+  function passaPer(e){
     const d = e.dataPag||e.dataRef||'';
-    if(per.ini && d < per.ini) return false;
-    if(per.fim && d > per.fim) return false;
+    if(per.ini && d<per.ini) return false;
+    if(per.fim && d>per.fim) return false;
     return true;
   }
-  const filtradas = entradas.filter(e=>{
-    if(!passaPeriodo(e)) return false;
+
+  const filtradas = todasEntradas.filter(e=>{
+    if(!passaPer(e)) return false;
     if(finFiltroStatus==='pagos' && e.status!=='pago') return false;
     if(finFiltroStatus==='pendentes' && e.status!=='pendente') return false;
     return true;
   }).sort((a,b)=>(b.dataPag||b.dataRef||'').localeCompare(a.dataPag||a.dataRef||''));
 
-  // ── 4. KPIs do período (sem filtro de status)
-  const todasPeriodo = entradas.filter(passaPeriodo);
-  const totalRecebido = todasPeriodo.filter(e=>e.status==='pago').reduce((s,e)=>s+e.total,0);
-  const totalAReceber = todasPeriodo.filter(e=>e.status==='pendente').reduce((s,e)=>s+e.total,0);
-  const totalGeral    = totalRecebido + totalAReceber;
+  const org = filtradas.filter(e=>e.canal!=='digital');
+  const dig = filtradas.filter(e=>e.canal==='digital');
 
-  // KPI global (todo histórico)
-  const totalRecebidoGlobal = entradas.filter(e=>e.status==='pago').reduce((s,e)=>s+e.total,0);
-  const totalAReceberGlobal = entradas.filter(e=>e.status==='pendente').reduce((s,e)=>s+e.total,0);
+  // KPIs por canal (sem filtro status, apenas período)
+  function kpi(lista){
+    const p = lista.filter(e=>passaPer(e)&&e.status==='pago').reduce((s,e)=>s+e.total,0);
+    const r = lista.filter(e=>passaPer(e)&&e.status==='pendente').reduce((s,e)=>s+e.total,0);
+    return {pago:p,pendente:r};
+  }
+  const kOrg = kpi(todasEntradas.filter(e=>e.canal!=='digital'));
+  const kDig = kpi(todasEntradas.filter(e=>e.canal==='digital'));
+  const kTotal = {pago:kOrg.pago+kDig.pago, pendente:kOrg.pendente+kDig.pendente};
 
-  // ── 5. Agrupar filtradas por data (dia)
-  const porDia = {};
-  filtradas.forEach(e=>{
-    const k=(e.dataPag||e.dataRef||'sem-data');
-    if(!porDia[k]) porDia[k]=[];
-    porDia[k].push(e);
-  });
-
-  // ── 6. Render de cada linha
+  // ── 3. Render de linha
   function linhaItem(e){
-    const isP = e.status==='pago';
-    const dataExib = e.dataPag||e.dataRef ? fmtDate(e.dataPag||e.dataRef) : '—';
-    const canalBadge = e.canal==='digital'
-      ? `<span style="font-size:10px;padding:1px 7px;border-radius:99px;background:#EFF6FF;color:#2563EB;font-weight:700;">📱</span>`
-      : `<span style="font-size:10px;padding:1px 7px;border-radius:99px;background:#F0FDF4;color:#15803D;font-weight:700;">🌱</span>`;
-    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F3F4F6;transition:background .1s;" onmouseenter="this.style.background='#FAFAFA'" onmouseleave="this.style.background=''">
-      <div style="min-width:62px;font-size:12px;font-weight:700;color:#6B7280;">${dataExib}</div>
+    const pago = e.status==='pago';
+    const data = e.dataPag||e.dataRef ? fmtDate(e.dataPag||e.dataRef) : '—';
+    const darBaixaBtn = !pago ? `<button onclick="_darBaixaFinanceiro('${e.fonte}','${e._envId||''}','${e._progId||''}','${e._enId||''}')"
+      style="padding:5px 12px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit;">✅ Dar baixa</button>` : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f3f4f6;background:${pago?'#fff':'#fffbeb'};" onmouseenter="this.style.background='${pago?'#f9fafb':'#fef9c3'}'" onmouseleave="this.style.background='${pago?'#fff':'#fffbeb'}'">
+      <div style="min-width:58px;font-size:11px;font-weight:700;color:#9ca3af;">${data}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:800;color:#111;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.cliente}</div>
-        <div style="font-size:11px;color:#9CA3AF;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.descricao}${e.detalhe?` · <span style="color:#CBD5E1;">${e.detalhe}</span>`:''}</div>
+        <div style="font-weight:800;color:#111;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.cliente}</div>
+        <div style="font-size:11px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.descricao}${e.desconto?` · Desc. ${e.desconto}%`:''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        ${canalBadge}
-        <span style="font-size:10px;padding:1px 7px;border-radius:99px;${isP?'background:#D1FAE5;color:#065f46;':'background:#FEF3C7;color:#92400E;'}font-weight:800;">${isP?'✅ Pago':'⏳ Pend.'}</span>
-        <span style="font-size:14px;font-weight:900;color:${isP?'#059669':'#D97706'};min-width:70px;text-align:right;">${brl(e.total)}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        ${darBaixaBtn}
+        <div style="text-align:right;">
+          <div class="brl-valor" style="font-size:14px;font-weight:900;color:${pago?'#059669':'#d97706'};">${brl(e.total)}</div>
+          <div style="font-size:10px;font-weight:700;${pago?'color:#059669':'color:#d97706'};">${pago?'✅ Pago':'⏳ Pendente'}</div>
+        </div>
       </div>
     </div>`;
   }
 
-  // ── 7. HTML final
-  const diasHtml = Object.keys(porDia).sort().reverse().map(dia=>{
-    const itens = porDia[dia];
-    const totalDia = itens.reduce((s,e)=>s+e.total,0);
-    const dataLabel = dia==='sem-data' ? 'Sem data' : (()=>{ const d=new Date(dia+'T00:00:00'); return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}); })();
-    return `<div style="margin-bottom:14px;border-radius:14px;overflow:hidden;border:1.5px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,.04);">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#F9FAFB;border-bottom:1.5px solid #E5E7EB;">
-        <span style="font-size:12px;font-weight:800;color:#374151;">${dataLabel}</span>
-        <span style="font-size:12px;font-weight:900;color:#1a2e1a;">${brl(totalDia)} · <span style="font-weight:600;color:#9CA3AF;">${itens.length} item${itens.length!==1?'s':''}</span></span>
-      </div>
-      ${itens.map(linhaItem).join('')}
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `
-    <!-- KPIs globais fixos -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px;">
-      <div style="background:linear-gradient(135deg,#065F46,#047857);border-radius:14px;padding:16px 18px;color:#fff;">
-        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">✅ Recebido total</div>
-        <div style="font-size:22px;font-weight:900;">${brl(totalRecebidoGlobal)}</div>
-      </div>
-      <div style="background:linear-gradient(135deg,#92400E,#B45309);border-radius:14px;padding:16px 18px;color:#fff;">
-        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">⏳ A receber total</div>
-        <div style="font-size:22px;font-weight:900;">${brl(totalAReceberGlobal)}</div>
-      </div>
-      <div style="background:linear-gradient(135deg,#1D4ED8,#2563EB);border-radius:14px;padding:16px 18px;color:#fff;">
-        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">📅 ${labelPeriodo} — recebido</div>
-        <div style="font-size:22px;font-weight:900;">${brl(totalRecebido)}</div>
-        ${totalAReceber>0?`<div style="font-size:11px;opacity:.65;margin-top:3px;">+ ${brl(totalAReceber)} pendente</div>`:''}
-      </div>
-    </div>
-
-    <!-- Filtros simples -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
-      <!-- Período -->
-      <div style="display:flex;gap:3px;background:#F3F4F6;border-radius:10px;padding:3px;">
-        ${['mes','mesant','ano','tudo'].map(p=>{
-          const lbl={mes:'Este mês',mesant:'Mês passado',ano:`${anoHoje}`,tudo:'Tudo'}[p];
-          const ativo=finFiltroPeriodo===p;
-          return `<button data-fin-per="${p}" style="padding:6px 13px;border-radius:7px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:${ativo?'#fff':'transparent'};color:${ativo?'#111':'#6B7280'};box-shadow:${ativo?'0 1px 4px rgba(0,0,0,.1)':'none'};">${lbl}</button>`;
-        }).join('')}
-      </div>
-      <!-- Status -->
-      <div style="display:flex;gap:3px;background:#F3F4F6;border-radius:10px;padding:3px;">
-        ${[['todos','Todos','#111'],['pendentes','⏳ A receber','#B45309'],['pagos','✅ Recebidos','#059669']].map(([v,lbl,cor])=>{
-          const ativo=finFiltroStatus===v;
-          return `<button data-fin-status="${v}" style="padding:6px 13px;border-radius:7px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:${ativo?'#fff':'transparent'};color:${ativo?cor:'#6B7280'};box-shadow:${ativo?'0 1px 4px rgba(0,0,0,.1)':'none'};">${lbl}</button>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- Lista de lançamentos -->
-    ${filtradas.length===0 ? `
-      <div style="text-align:center;padding:60px 20px;color:#9CA3AF;background:#FAFAFA;border-radius:16px;border:1.5px dashed #E5E7EB;">
-        <div style="font-size:40px;margin-bottom:10px;">💰</div>
-        <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:6px;">Nenhum lançamento</div>
-        <div style="font-size:13px;">Nenhum item encontrado para este período.</div>
-      </div>` :
-    `<div style="background:#fff;border-radius:14px;overflow:hidden;border:1.5px solid #E5E7EB;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-      <!-- Resumo do filtro ativo -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:linear-gradient(90deg,#F0FDF4,#EFF6FF);border-bottom:1.5px solid #E5E7EB;">
-        <span style="font-size:13px;font-weight:800;color:#1a2e1a;">${labelPeriodo} · ${finFiltroStatus==='todos'?'Todos':finFiltroStatus==='pagos'?'Recebidos':'A receber'}</span>
+  function blocoCanal(lista, label, cor, bgHeader){
+    const pagoT = lista.filter(e=>e.status==='pago').reduce((s,e)=>s+e.total,0);
+    const pendT  = lista.filter(e=>e.status==='pendente').reduce((s,e)=>s+e.total,0);
+    const conteudo = lista.length
+      ? lista.map(linhaItem).join('')
+      : `<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;">Nenhum lançamento</div>`;
+    return `<div style="border:1.5px solid #e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05);">
+      <div style="background:${bgHeader};padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:15px;font-weight:900;color:#fff;">${label}</div>
         <div style="display:flex;gap:16px;align-items:center;">
-          ${totalRecebido>0?`<span style="font-size:12px;font-weight:800;color:#059669;">✅ ${brl(totalRecebido)}</span>`:''}
-          ${totalAReceber>0?`<span style="font-size:12px;font-weight:800;color:#D97706;">⏳ ${brl(totalAReceber)}</span>`:''}
-          <span style="font-size:11px;color:#9CA3AF;">${filtradas.length} item${filtradas.length!==1?'s':''}</span>
+          ${pagoT>0?`<div style="text-align:right;"><div style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">✅ Recebido</div><div class="brl-valor" style="font-size:16px;font-weight:900;color:#fff;">${brl(pagoT)}</div></div>`:''}
+          ${pendT>0?`<div style="text-align:right;"><div style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">⏳ A receber</div><div class="brl-valor" style="font-size:16px;font-weight:900;color:#fff;">${brl(pendT)}</div></div>`:''}
         </div>
       </div>
-      ${diasHtml}
-    </div>`}`;
+      <div style="background:#fff;">${conteudo}</div>
+    </div>`;
+  }
 
-  // ── Listeners
+  // ── 4. Pagamentos em atraso (pendentes com data anterior a hoje)
+  const hojeStr = hoje.toISOString().slice(0,10);
+  const atrasados = todasEntradas.filter(e=>{
+    if(e.status !== 'pendente') return false;
+    const d = e.dataPag||e.dataRef||'';
+    return d && d >= '2026-11-23' && d < hojeStr;
+  }).sort((a,b)=>(a.dataPag||a.dataRef||'').localeCompare(b.dataPag||b.dataRef||''));
+  const totalAtrasado = atrasados.reduce((s,e)=>s+e.total,0);
+
+  // Agrupar por cliente
+  const atrasadosAgrupados = [];
+  atrasados.forEach(e=>{
+    const chave = (e.cliente||'').toLowerCase().trim();
+    const grupo = atrasadosAgrupados.find(g=>g.chave===chave);
+    if(grupo){
+      grupo.total += e.total;
+      grupo.itens.push(e);
+      grupo.descricoes.push(e.descricao);
+      const d = e.dataPag||e.dataRef||'';
+      if(d && (!grupo.dataMin || d < grupo.dataMin)) grupo.dataMin = d;
+    } else {
+      atrasadosAgrupados.push({
+        chave, cliente: e.cliente,
+        total: e.total,
+        itens: [e],
+        descricoes: [e.descricao],
+        dataMin: e.dataPag||e.dataRef||''
+      });
+    }
+  });
+
+  function diasAtraso(dataStr){
+    if(!dataStr) return 0;
+    const diff = hoje - new Date(dataStr+'T00:00:00');
+    return Math.floor(diff/86400000);
+  }
+
+  const blocoAtrasados = atrasadosAgrupados.length === 0 ? '' : `
+    <div id="blocoAtrasados" style="border:2px solid #fca5a5;border-radius:16px;overflow:hidden;margin-bottom:20px;box-shadow:0 4px 20px rgba(220,38,38,.15);">
+      <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="const b=document.getElementById('listaAtrasados');const arr=document.getElementById('arrAtrasados');b.style.display=b.style.display==='none'?'block':'none';arr.textContent=b.style.display==='none'?'▼':'▲';">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🚨</span>
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#fff;">Pagamentos em Atraso</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.75);font-weight:600;">${atrasadosAgrupados.length} cliente${atrasadosAgrupados.length>1?'s':''} com pagamento pendente</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Total em aberto</div>
+            <div class="brl-valor" style="font-size:20px;font-weight:900;color:#fca5a5;">${brl(totalAtrasado)}</div>
+          </div>
+          <span id="arrAtrasados" style="font-size:16px;color:#fff;font-weight:900;">▲</span>
+        </div>
+      </div>
+      <div id="listaAtrasados" style="background:#fff;">
+        ${atrasadosAgrupados.map(g=>{
+          const dias = diasAtraso(g.dataMin);
+          const data = g.dataMin ? fmtDate(g.dataMin) : '—';
+          const prods = g.descricoes.filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(', ') + (g.descricoes.length>3 ? ` +${g.descricoes.length-3} mais` : '');
+          const qtd = g.itens.length;
+          // botões dar baixa para cada item do grupo
+          const botoesId = 'darBaixaGrupo_'+g.chave.replace(/\W/g,'_');
+          const botoesHtml = g.itens.map(e=>`_darBaixaFinanceiro('${e.fonte}','${e._envId||''}','${e._progId||''}','${e._enId||''}')`).join(';');
+          return `<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #fee2e2;background:#fff9f9;" onmouseenter="this.style.background='#fef2f2'" onmouseleave="this.style.background='#fff9f9'">
+            <div style="min-width:52px;font-size:11px;font-weight:700;color:#9ca3af;">${data}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:800;color:#111;font-size:14px;">${g.cliente}</div>
+              <div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${prods}</div>
+              ${qtd>1?`<div style="font-size:10px;font-weight:700;color:#dc2626;margin-top:2px;">${qtd} lançamentos agrupados</div>`:''}
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+              <span style="font-size:10px;font-weight:800;background:#fee2e2;color:#dc2626;border-radius:20px;padding:3px 10px;white-space:nowrap;">${dias} dia${dias!==1?'s':''} atrás</span>
+              <button onclick="${botoesHtml};renderFinanceiro();" style="padding:6px 14px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Dar baixa${qtd>1?' (todos)':''}</button>
+              <div style="text-align:right;min-width:70px;">
+                <div class="brl-valor" style="font-size:14px;font-weight:900;color:#dc2626;">${brl(g.total)}</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // ── 5. HTML final
+  el.innerHTML = blocoAtrasados + `
+    <!-- TOTAIS GERAIS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+      <div style="background:linear-gradient(135deg,#065f46,#059669);border-radius:14px;padding:16px 20px;color:#fff;">
+        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">✅ Total recebido</div>
+        <div class="brl-valor" style="font-size:24px;font-weight:900;">${brl(kTotal.pago)}</div>
+        <div class="brl-valor" style="font-size:11px;opacity:.65;margin-top:3px;">🌱 ${brl(kOrg.pago)} · 📱 ${brl(kDig.pago)}</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#92400e,#d97706);border-radius:14px;padding:16px 20px;color:#fff;">
+        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">⏳ Total a receber</div>
+        <div class="brl-valor" style="font-size:24px;font-weight:900;">${brl(kTotal.pendente)}</div>
+        <div class="brl-valor" style="font-size:11px;opacity:.65;margin-top:3px;">🌱 ${brl(kOrg.pendente)} · 📱 ${brl(kDig.pendente)}</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:14px;padding:16px 20px;color:#fff;">
+        <div style="font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">💰 Faturamento total</div>
+        <div class="brl-valor" style="font-size:24px;font-weight:900;">${brl(kTotal.pago+kTotal.pendente)}</div>
+        <div style="font-size:11px;opacity:.65;margin-top:3px;">${filtradas.length} lançamento${filtradas.length!==1?'s':''}</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
+      <div style="display:flex;gap:3px;background:#f3f4f6;border-radius:10px;padding:3px;">
+        ${['mes','mesant','ano','tudo'].map(p=>{
+          const lbl={mes:'Este mês',mesant:'Mês passado',ano:`${anoHoje}`,tudo:'Tudo'}[p];
+          const a=finFiltroPeriodo===p;
+          return `<button data-fin-per="${p}" style="padding:6px 13px;border-radius:7px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:${a?'#fff':'transparent'};color:${a?'#111':'#6b7280'};box-shadow:${a?'0 1px 4px rgba(0,0,0,.1)':'none'};">${lbl}</button>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:3px;background:#f3f4f6;border-radius:10px;padding:3px;">
+        ${[['todos','Todos'],['pendentes','⏳ A receber'],['pagos','✅ Recebidos']].map(([v,lbl])=>{
+          const a=finFiltroStatus===v;
+          return `<button data-fin-status="${v}" style="padding:6px 13px;border-radius:7px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:${a?'#fff':'transparent'};color:${a?'#111':'#6b7280'};box-shadow:${a?'0 1px 4px rgba(0,0,0,.1)':'none'};">${lbl}</button>`;
+        }).join('')}
+      </div>
+      <span style="font-size:12px;color:#9ca3af;">${lblPer}</span>
+    </div>
+
+    <!-- DOIS BLOCOS SEPARADOS -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      ${blocoCanal(org,'🌱 Orgânico','#15803d','linear-gradient(135deg,#14532d,#16a34a)')}
+      ${blocoCanal(dig,'📱 Digital','#1d4ed8','linear-gradient(135deg,#1e3a5f,#2563eb)')}
+    </div>`;
+
   if(el._finAbort) el._finAbort.abort();
   el._finAbort = new AbortController();
-  const _sig = el._finAbort.signal;
   el.addEventListener('click', e=>{
-    const bp = e.target.closest('[data-fin-per]');
-    if(bp){ finFiltroPeriodo=bp.dataset.finPer; renderFinanceiro(); return; }
-    const bs = e.target.closest('[data-fin-status]');
-    if(bs){ finFiltroStatus=bs.dataset.finStatus; renderFinanceiro(); }
-  }, {signal:_sig});
+    const bp=e.target.closest('[data-fin-per]');
+    if(bp){finFiltroPeriodo=bp.dataset.finPer;renderFinanceiro();return;}
+    const bs=e.target.closest('[data-fin-status]');
+    if(bs){finFiltroStatus=bs.dataset.finStatus;renderFinanceiro();}
+  },{signal:el._finAbort.signal});
 }
 
 // ---------- DASHBOARD ----------
@@ -4000,8 +4621,8 @@ function renderDashboard(){
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
         <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:6px;">💰 Receita total</div>
-          <div style="font-size:20px;font-weight:900;color:#fff;">${brl(recCn)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:6px;line-height:1.6;">
+          <div class="brl-valor" style="font-size:20px;font-weight:900;color:#fff;">${brl(recCn)}</div>
+          <div class="brl-valor" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:6px;line-height:1.6;">
             📦 Prog: ${brl(progCn)}<br>
             📄 Contr: ${brl(contCn)}<br>
             🚚 Envios: ${brl(envCn)}
@@ -4009,28 +4630,28 @@ function renderDashboard(){
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:4px;">📦 Programações</div>
-          <div style="font-size:16px;font-weight:800;color:#86EFAC;">${brl(progCn)}</div>
+          <div class="brl-valor" style="font-size:16px;font-weight:800;color:#86EFAC;">${brl(progCn)}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;">${cn==='todos'?ativasOrg.length+' org · '+ativasDig.length+' dig':ativasCn.length+' ativas'}</div>
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:4px;">📄 Contratos ativos</div>
-          <div style="font-size:16px;font-weight:800;color:#93C5FD;">${brl(contCn)}</div>
+          <div class="brl-valor" style="font-size:16px;font-weight:800;color:#93C5FD;">${brl(contCn)}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;">${cn==='todos'?contAtivos.length+' contratos':contratosOrg.length+contratosDig.length} contrato${contAtivos.length!==1?'s':''} · valor total do período</div>
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:4px;">🚚 Envios registrados</div>
-          <div style="font-size:16px;font-weight:800;color:#FDE68A;">${brl(envCn)}</div>
+          <div class="brl-valor" style="font-size:16px;font-weight:800;color:#FDE68A;">${brl(envCn)}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;">${cn==='todos'?todosEnvios.length:cn==='digital'?enviosDig.length:enviosOrg.length} envio${todosEnvios.length!==1?'s':''} confirmados</div>
         </div>
         <div style="background:rgba(220,38,38,.15);border-radius:12px;padding:14px 16px;">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:4px;">🏭 Custo fornecedores</div>
-          <div style="font-size:16px;font-weight:800;color:#FCA5A5;">${brl(totalCusto)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;">Pago: ${brl(totalPago2)} · Pendente: ${brl(totalPendente2)}</div>
+          <div class="brl-valor" style="font-size:16px;font-weight:800;color:#FCA5A5;">${brl(totalCusto)}</div>
+          <div class="brl-valor" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;">Pago: ${brl(totalPago2)} · Pendente: ${brl(totalPendente2)}</div>
         </div>
         <div style="background:rgba(${mrgCn>=0?'16,185,129':'220,38,38'},.18);border-radius:12px;padding:14px 16px;border:1.5px solid rgba(${mrgCn>=0?'16,185,129':'220,38,38'},.35);">
           <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-bottom:4px;">📈 Margem bruta</div>
-          <div style="font-size:20px;font-weight:900;color:${mrgCn>=0?'#4ADE80':'#FCA5A5'};">${brl(mrgCn)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px;">${mrgPctCn!==null?mrgPctCn+'% da receita':'—'}</div>
+          <div class="brl-valor" style="font-size:20px;font-weight:900;color:${mrgCn>=0?'#4ADE80':'#FCA5A5'};">${brl(mrgCn)}</div>
+          <div class="brl-valor" style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px;">${mrgPctCn!==null?mrgPctCn+'% da receita':'—'}</div>
         </div>
       </div>
     </div>`;
@@ -4304,6 +4925,9 @@ function renderEnvio(){
             ${badgesEntrega}
             ${env.horarioMaximo?`<span class="cli-card-badge hora">⏰ até ${env.horarioMaximo}</span>`:''}
             ${env.canal==='digital'?`<span class="prog-badge-canal-dig">📱 Digital</span>${env.vendedor?`<span style="background:#EDE9FE;color:#5B21B6;font-size:10px;font-weight:800;padding:2px 9px;border-radius:99px;border:1px solid #C4B5FD;">👤 ${env.vendedor}</span>`:''}`:env.canal==='organico'?`<span class="prog-badge-canal-org">🌱 Orgânico</span>`:''}
+            ${(env.fornecedorProdutos&&env.fornecedorProdutos.length)?`<button onclick="(function(){var el=document.getElementById('_forn_${env.id}');el.style.display=el.style.display==='none'?'block':'none';})()" style="padding:4px 10px;font-size:12px;border:1.5px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:7px;font-weight:700;cursor:pointer;font-family:inherit;">🏭 Fornecedor</button>`:''}
+            ${env.contato?`<a href="https://wa.me/55${env.contato.replace(/\D/g,'')}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:12px;background:#dcfce7;color:#15803d;border:1.5px solid #86efac;border-radius:7px;font-weight:700;text-decoration:none;font-family:inherit;">💬 WhatsApp</a>`:''}
+            <button onclick="_gerarControlePedido('${env.id}')" style="padding:4px 10px;font-size:12px;border:1.5px solid #2d5a2d;background:#f0f7f0;color:#2d5a2d;border-radius:7px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Controle</button>
             <button class="btn secondary" data-edit-envio="${env.id}" style="padding:4px 10px;font-size:12px;">✏️ Editar</button>
             <button class="btn danger" data-del-envio="${env.id}" style="padding:4px 10px;font-size:12px;">✕</button>
           </div>
@@ -4319,6 +4943,28 @@ function renderEnvio(){
           </div>`:''}
           ${env.obs?`<div class="cli-card-obs">💬 ${env.obs}</div>`:''}
         </div>
+        <!-- Painel Fornecedor -->
+        ${(env.fornecedorProdutos&&env.fornecedorProdutos.length)?`
+        <div id="_forn_${env.id}" style="display:none;padding:14px 18px;border-top:2px solid #fde68a;background:#fffbeb;">
+          <div style="font-size:11px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🏭 Custos do Fornecedor${env.fornecedorNome?' — '+env.fornecedorNome:''}</div>
+          <div style="display:grid;grid-template-columns:2fr 60px 90px 90px;gap:6px;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;">Variedade</span>
+            <span style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;text-align:center;">Qtd</span>
+            <span style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;text-align:right;">Custo/un</span>
+            <span style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;text-align:right;">Total</span>
+          </div>
+          ${(env.fornecedorProdutos||[]).map(f=>`
+          <div style="display:grid;grid-template-columns:2fr 60px 90px 90px;gap:6px;padding:7px 0;border-bottom:1px solid #fde68a;">
+            <span style="font-weight:700;color:#92400e;font-size:13px;">${f.variedade||'—'}</span>
+            <span style="text-align:center;color:#b45309;font-size:13px;">${f.quantidade||0}</span>
+            <span style="text-align:right;color:#b45309;font-size:12px;">${f.custoUnitario?brl(Number(f.custoUnitario))+'/un':''}</span>
+            <span style="text-align:right;font-weight:800;color:#92400e;font-size:14px;">${f.totalCusto?brl(Number(f.totalCusto)):''}</span>
+          </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:2px solid #fcd34d;margin-top:4px;">
+            <span style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;">Total a pagar ao fornecedor</span>
+            <span style="font-size:18px;font-weight:900;color:#92400e;">${brl((env.fornecedorProdutos||[]).reduce((s,f)=>s+(Number(f.totalCusto)||0),0))}</span>
+          </div>
+        </div>`:''}
         <!-- Barra de pagamento -->
         <div style="padding:10px 14px;border-top:1px solid ${envPago?'#D1FAE5':'#F3F4F6'};background:${envPago?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'#FAFAFA'};border-radius:0 0 12px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -4751,9 +5397,12 @@ function renderEnvio(){
         // Preenche data de entrega no formulário
         const dataInp=document.querySelector('#formEnvio [name="dataEntrega"]');
         if(dataInp){ dataInp.value=firstEn.data||''; dataInp.dispatchEvent(new Event('change',{bubbles:true})); }
-        // Preenche nome do cliente
+        // Preenche nome do cliente e transfere cliente_id
         const nomeInp=document.querySelector('#formEnvio [name="cliente"]');
-        if(nomeInp) nomeInp.value=firstProg.cliente;
+        if(nomeInp){
+          nomeInp.value=firstProg.cliente;
+          nomeInp.dataset.clienteId = firstProg.cliente_id||'';
+        }
         // Preenche canal e vendedor
         const canalSel=document.getElementById('formEnvioCanal');
         if(canalSel){ canalSel.value=firstProg.canal||'organico'; canalSel.dispatchEvent(new Event('change')); }
@@ -4851,9 +5500,11 @@ function renderEnvio(){
       if(_dupli && !confirm(`⚠️ Já existe um pedido para "${fd.get('cliente').trim()}" em ${_dataEnvio}.\n\nCriar mesmo assim?`)) return;
       // Suporte a múltiplos progs vinculados (novo) e único prog (legado)
       const _lProgIds = _lProgId ? _lProgId.split(',').filter(Boolean) : [];
+      const _cliInp = document.querySelector('#formEnvio [name="cliente"]');
       state.envios.push({
         id:uid(), dataEntrega:_dataEnvio, diaEntrega:_diaEnvio,
         cliente:fd.get('cliente').trim(),
+        cliente_id: _cliInp?.dataset?.clienteId || null,
         canal: _canalEnvio,
         vendedor: _canalEnvio==='digital' ? (fd.get('vendedor')||'') : '',
         entregaInfo,
@@ -5459,7 +6110,7 @@ function renderEnvio(){
         <div class="envio-sum-lbl">Pedidos de clientes</div>
       </div>
       ${totalVendaDia>0?`<div class="envio-sum-cli">
-        <div class="envio-sum-val">${brl(totalVendaDia)}</div>
+        <div class="envio-sum-val brl-valor">${brl(totalVendaDia)}</div>
         <div class="envio-sum-lbl">Valor total vendas</div>
       </div>`:''}
       <div class="envio-sum-forn">
@@ -5467,7 +6118,7 @@ function renderEnvio(){
         <div class="envio-sum-lbl">Fornecedores do dia</div>
       </div>
       ${totalCustoDia>0?`<div class="envio-sum-forn">
-        <div class="envio-sum-val">${brl(totalCustoDia)}</div>
+        <div class="envio-sum-val brl-valor">${brl(totalCustoDia)}</div>
         <div class="envio-sum-lbl">Custo total compras</div>
       </div>`:''}
     </div>`:''}
@@ -5560,9 +6211,11 @@ function renderEnvio(){
     else if(tipo==='aereo')      { ei.companhiaAerea=(fd.get('eeCompanhiaAerea')||'').trim(); ei.aeroportoDestino=(fd.get('eeAeroporto')||'').trim(); ei.awb=(fd.get('eeAwb')||'').trim(); }
     const dt=(fd.get('eeData')||'').trim();
     const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+    const _eeCliInp = form.querySelector('[name="eeCliente"]');
     en.dataEntrega  = dt;
     en.diaEntrega   = dt ? dias[new Date(dt+'T00:00:00').getDay()] : '';
     en.cliente      = fd.get('eeCliente').trim();
+    en.cliente_id   = _eeCliInp?.dataset?.clienteId || en.cliente_id || null;
     en.canal        = fd.get('eeCanal')||'organico';
     en.vendedor     = en.canal==='digital' ? (fd.get('eeVendedor')||'').trim() : '';
     en.horarioMaximo= fd.get('eeHorario')||'';
@@ -6473,7 +7126,7 @@ function gerarRelatorioSemanaProgramacoes(semana){
 }
 
 function renderTudo(){
-  renderNegociando(); renderEstoque(); renderIdeias(); renderContratos();
+  renderNegociando(); renderEstoque(); renderContratos();
   renderDashboard(); renderAlertas();
   if(currentTab==='envio') renderEnvio();
   atualizarDatalistClientes();
@@ -6566,6 +7219,31 @@ document.addEventListener('keydown', e=>{
   if(!/\d/.test(e.key)) e.preventDefault();
 }, true);
 </script>
+<!-- MODAL IMPORTAR PEDIDO -->
+<div id="_modalImport" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;padding-top:40px;">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-size:17px;font-weight:800;color:#1a1a2e;margin-bottom:4px;">📥 Importar Pedido do Vendedor</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:14px;">Preencha as informações de entrega antes de confirmar.</div>
+    <div id="_modalImportResumo" style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:16px;"></div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px;">Meio de Envio</label>
+      <select id="_modalMeioEnvio" onchange="_modalAtualizarCampos()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;color:#1a1a2e;background:#f9fafb;outline:none;-webkit-appearance:none;">
+        <option value="">— Selecionar —</option>
+        <option value="doca">🏭 Doca (CEAFLOR)</option>
+        <option value="transportadora">🚛 Transportadora</option>
+        <option value="direta">🚗 Entrega direta / Motoboy</option>
+        <option value="retirada">📦 Retirada pelo cliente</option>
+        <option value="aereo">✈️ Aéreo</option>
+      </select>
+    </div>
+    <div id="_modalCamposExtra"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="_fecharModalImport()" style="flex:1;background:#f3f4f6;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;color:#6b7280;">Cancelar</button>
+      <button onclick="_confirmarImportacao()" style="flex:2;background:#22c55e;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;">✓ Confirmar e Importar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
@@ -6587,13 +7265,352 @@ document.addEventListener('keydown', e=>{
       _renderPainelPedidos();
       toast('📥 Novo pedido do vendedor!');
     })
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'pedidos_vendedor'}, ()=>{
-      _carregarPedidosPendentes();
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'pedidos_vendedor'}, payload=>{
+      // Atualiza o pedido na lista local
+      window._pedidosData=(window._pedidosData||[]).map(x=>x.id===payload.new.id?payload.new:x);
+      _atualizarBadgePedidos();
+      _renderPainelPedidos();
+      toast('📝 Pedido atualizado pelo vendedor!');
+    })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'pedidos_vendedor'}, payload=>{
+      window._pedidosData=(window._pedidosData||[]).filter(x=>x.id!==payload.old.id);
+      window._pedidosPendentes=Math.max(0,(window._pedidosPendentes||1)-1);
+      _atualizarBadgePedidos();
+      _renderPainelPedidos();
     })
     .subscribe();
 
   // Sincroniza digital na carga inicial
   setTimeout(()=>_syncDigital(), 1500);
+
+  // ── PRÉ-CARREGA CLIENTES para autocomplete instantâneo ──
+  setTimeout(()=>{ _bmCarregarClientes().catch(()=>{}); }, 1200);
+})();
+
+// ═══════════════════════════════════════════════
+// ABA CLIENTES & FORNECEDORES
+// ═══════════════════════════════════════════════
+let _bmClientesCache = null;
+let _bmFornCache = null;
+let _cliSubAtiva = 'clientes';
+
+async function _bmCarregarClientes(forcar){
+  if(!forcar && _bmClientesCache) return _bmClientesCache;
+  if(!window._sb) return [];
+  const {data} = await window._sb.from('clientes').select('*').order('nome');
+  _bmClientesCache = data || [];
+  return _bmClientesCache;
+}
+
+async function _bmCarregarFornecedores(forcar){
+  if(!forcar && _bmFornCache) return _bmFornCache;
+  if(!window._sb) return [];
+  const {data} = await window._sb.from('fornecedores').select('*').order('nome').catch(()=>({data:[]}));
+  _bmFornCache = data || [];
+  return _bmFornCache;
+}
+
+async function _cliIniciar(){
+  const [clis, forns] = await Promise.all([_bmCarregarClientes(), _bmCarregarFornecedores()]);
+  // Preenche filtro de UF
+  const ufs = [...new Set([...clis.map(c=>c.uf), ...forns.map(f=>f.uf)].filter(Boolean))].sort();
+  const ufSel = document.getElementById('cliUfFiltro');
+  const valAtual = ufSel.value;
+  ufSel.innerHTML = '<option value="">Todos UFs</option>' + ufs.map(u=>`<option value="${u}">${u}</option>`).join('');
+  ufSel.value = valAtual;
+  document.getElementById('cliCountBadge').textContent = clis.length;
+  document.getElementById('fornCountBadge').textContent = forns.length;
+  _cliRender();
+}
+
+function _cliSub(sub){
+  _cliSubAtiva = sub;
+  const bc = document.getElementById('cliSubClientes');
+  const bf = document.getElementById('cliSubForn');
+  if(sub==='clientes'){
+    bc.style.borderBottomColor='#16a34a'; bc.style.color='#16a34a'; bc.style.fontWeight='800';
+    bf.style.borderBottomColor='transparent'; bf.style.color='#6b7280'; bf.style.fontWeight='700';
+    document.getElementById('cliAddBtn').textContent='+ Novo Cliente';
+  } else {
+    bf.style.borderBottomColor='#d97706'; bf.style.color='#d97706'; bf.style.fontWeight='800';
+    bc.style.borderBottomColor='transparent'; bc.style.color='#6b7280'; bc.style.fontWeight='700';
+    document.getElementById('cliAddBtn').textContent='+ Novo Fornecedor';
+  }
+  _cliRender();
+}
+
+let _cliViewAtiva = 'lista'; // padrão: lista
+
+function _cliSetView(v){
+  _cliViewAtiva = v;
+  const bc = document.getElementById('cliViewCards');
+  const bl = document.getElementById('cliViewLista');
+  const ativo = 'background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.1);';
+  const inativo = 'background:transparent;color:#6b7280;box-shadow:none;';
+  bc.style.cssText = bc.style.cssText.replace(/background[^;]+;|color[^;]+;|box-shadow[^;]+;/g,'') + (v==='cards'?ativo:inativo);
+  bl.style.cssText = bl.style.cssText.replace(/background[^;]+;|color[^;]+;|box-shadow[^;]+;/g,'') + (v==='lista'?ativo:inativo);
+  document.getElementById('cliGrid').style.display   = v==='cards' ? 'grid'  : 'none';
+  document.getElementById('cliLista').style.display  = v==='lista' ? 'block' : 'none';
+  _cliRender();
+}
+
+function _cliRender(){
+  const q = (document.getElementById('cliSearchInput')?.value||'').toLowerCase().trim();
+  const uf = document.getElementById('cliUfFiltro')?.value||'';
+  const lista = _cliSubAtiva==='clientes' ? (_bmClientesCache||[]) : (_bmFornCache||[]);
+  let res = lista;
+  if(q) res = res.filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.fantasia||'').toLowerCase().includes(q)||(c.cnpj_cpf||'').includes(q)||(c.cidade||'').toLowerCase().includes(q));
+  if(uf) res = res.filter(c=>c.uf===uf);
+  const isForn = _cliSubAtiva==='fornecedores';
+  const cor = isForn ? '#d97706' : '#16a34a';
+  const bgCor = isForn ? '#fffbeb' : '#f0fdf4';
+
+  // Contador
+  const totEl = document.getElementById('cliTotalTxt');
+  if(totEl) totEl.textContent = res.length + ' cadastro' + (res.length!==1?'s':'') + ' encontrado' + (res.length!==1?'s':'');
+
+  const vazio = `<div style="text-align:center;padding:48px;color:#9ca3af;">
+    <div style="font-size:40px;margin-bottom:10px;">📭</div>
+    <div style="font-size:14px;">Nenhum cadastro encontrado</div>
+  </div>`;
+
+  // ── VISTA CARDS ──
+  const grid = document.getElementById('cliGrid');
+  if(grid){
+    if(!res.length){ grid.innerHTML=`<div style="grid-column:1/-1">${vazio}</div>`; }
+    else grid.innerHTML = res.map(c=>{
+      const nome = c.fantasia||c.nome||'—';
+      const sub2 = c.fantasia ? c.nome : '';
+      const cnpj = c.cnpj_cpf||'';
+      const tel = c.celular||c.fone||'';
+      const loc = [c.cidade,c.uf].filter(Boolean).join('/');
+      return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;padding:16px;transition:box-shadow .15s;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:14px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${nome}">${nome}</div>
+            ${sub2?`<div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub2}</div>`:''}
+          </div>
+          <span style="background:${bgCor};color:${cor};font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;">${isForn?(c.tipo_fornecedor||'Fornecedor'):'Cliente'}</span>
+        </div>
+        ${cnpj?`<div style="font-size:12px;color:#374151;margin-top:3px;">📄 ${cnpj}</div>`:''}
+        ${loc?`<div style="font-size:12px;color:#374151;margin-top:3px;">📍 ${loc}</div>`:''}
+        ${tel?`<div style="font-size:12px;color:#374151;margin-top:3px;">📞 ${tel}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:12px;border-top:1px solid #f3f4f6;padding-top:10px;">
+          <button onclick="_cliEditarModal('${c.id}','${_cliSubAtiva}')"
+            style="flex:1;padding:7px;border:1.5px solid ${cor};border-radius:8px;background:#fff;color:${cor};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>
+          <button onclick="_cliExcluir('${c.id}','${_cliSubAtiva}','${(c.fantasia||c.nome||'').replace(/'/g,'')}')"
+            style="padding:7px 10px;border:1.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── VISTA LISTA ──
+  const tbody = document.getElementById('cliListaBody');
+  if(tbody){
+    if(!res.length){ tbody.innerHTML=`<tr><td colspan="6">${vazio}</td></tr>`; }
+    else tbody.innerHTML = res.map((c,i)=>{
+      const nome = c.fantasia||c.nome||'—';
+      const razao = c.fantasia ? c.nome : '';
+      const loc = [c.cidade,c.uf].filter(Boolean).join('/');
+      const tel = c.celular||c.fone||'';
+      return `<tr style="border-bottom:1px solid #f3f4f6;background:${i%2===0?'#fff':'#fafafa'};"
+        onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+        <td style="padding:12px 16px;">
+          <div style="font-weight:700;color:#111;font-size:13px;">${nome}</div>
+          ${razao?`<div style="font-size:11px;color:#9ca3af;">${razao}</div>`:''}
+        </td>
+        <td style="padding:12px 16px;color:#374151;font-size:13px;">${c.cnpj_cpf||'—'}</td>
+        <td style="padding:12px 16px;color:#374151;font-size:13px;">${loc||'—'}</td>
+        <td style="padding:12px 16px;color:#374151;font-size:13px;">${tel||'—'}</td>
+        <td style="padding:12px 16px;color:#6b7280;font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.email||'—'}</td>
+        <td style="padding:12px 8px;text-align:center;white-space:nowrap;">
+          <button onclick="_cliEditarModal('${c.id}','${_cliSubAtiva}')"
+            title="Editar"
+            style="padding:5px 10px;border:1.5px solid ${cor};border-radius:7px;background:#fff;color:${cor};font-size:12px;font-weight:700;cursor:pointer;margin-right:4px;">✏️</button>
+          <button onclick="_cliExcluir('${c.id}','${_cliSubAtiva}','${(c.fantasia||c.nome||'').replace(/'/g,'')}')"
+            title="Excluir"
+            style="padding:5px 10px;border:1.5px solid #fca5a5;border-radius:7px;background:#fff;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;">🗑</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+async function _cliExcluir(id, sub, nome){
+  if(!confirm(`Excluir "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const tabela = sub==='fornecedores' ? 'fornecedores' : 'clientes';
+  const {error} = await window._sb.from(tabela).delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  if(sub==='fornecedores') await _bmCarregarFornecedores(true);
+  else await _bmCarregarClientes(true);
+  await _cliIniciar();
+  toast('🗑️ Cadastro removido.');
+}
+
+function _cliAbrirModal(tipo){
+  const t = tipo || (_cliSubAtiva==='fornecedores'?'fornecedor':'cliente');
+  document.getElementById('cliModalId').value='';
+  document.getElementById('cliModalTipo').value=t;
+  document.getElementById('cliModalTitulo').textContent = t==='fornecedor'?'🏭 Novo Fornecedor':'👤 Novo Cliente';
+  document.getElementById('cliModalSub').textContent = t==='fornecedor'?'Dados do fornecedor / viveiro':'Preencha os dados do cadastro';
+  document.getElementById('cliModalHeader').style.background = t==='fornecedor'?'linear-gradient(135deg,#78350f,#d97706)':'linear-gradient(135deg,#14532d,#16a34a)';
+  document.getElementById('cliModalForm').reset();
+  document.getElementById('cliMTipoFornWrap').style.display = t==='fornecedor'?'block':'none';
+  document.getElementById('cliModalErro').style.display='none';
+  document.getElementById('cliModal').style.display='flex';
+}
+
+async function _cliEditarModal(id, sub){
+  const lista = sub==='fornecedores' ? (_bmFornCache||[]) : (_bmClientesCache||[]);
+  const c = lista.find(x=>x.id===id);
+  if(!c) return;
+  const t = sub==='fornecedores'?'fornecedor':'cliente';
+  document.getElementById('cliModalId').value=c.id;
+  document.getElementById('cliModalTipo').value=t;
+  document.getElementById('cliModalTitulo').textContent = t==='fornecedor'?'Editar Fornecedor':'Editar Cliente';
+  document.getElementById('cliMNome').value=c.nome||'';
+  document.getElementById('cliMFantasia').value=c.fantasia||'';
+  document.getElementById('cliMCnpj').value=c.cnpj_cpf||'';
+  document.getElementById('cliMTipoPessoa').value=c.tipo_pessoa||'J';
+  document.getElementById('cliMEndereco').value=c.endereco||'';
+  document.getElementById('cliMNumero').value=c.numero||'';
+  document.getElementById('cliMCompl').value=c.complemento||'';
+  document.getElementById('cliMBairro').value=c.bairro||'';
+  document.getElementById('cliMCidade').value=c.cidade||'';
+  document.getElementById('cliMUf').value=c.uf||'';
+  document.getElementById('cliMCep').value=c.cep||'';
+  document.getElementById('cliMFone').value=c.fone||'';
+  document.getElementById('cliMCelular').value=c.celular||'';
+  document.getElementById('cliMEmail').value=c.email||'';
+  document.getElementById('cliMObs').value=c.obs||'';
+  document.getElementById('cliMTipoFornWrap').style.display=t==='fornecedor'?'block':'none';
+  if(t==='fornecedor') document.getElementById('cliMTipoForn').value=c.tipo_fornecedor||'Viveiro';
+  document.getElementById('cliModalErro').style.display='none';
+  document.getElementById('cliModal').style.display='flex';
+}
+
+function _cliFecharModal(){
+  document.getElementById('cliModal').style.display='none';
+}
+
+async function _cliSalvar(e){
+  e.preventDefault();
+  const id = document.getElementById('cliModalId').value;
+  const tipo = document.getElementById('cliModalTipo').value;
+  const tabela = tipo==='fornecedor' ? 'fornecedores' : 'clientes';
+  const dados = {
+    nome: document.getElementById('cliMNome').value.trim(),
+    fantasia: document.getElementById('cliMFantasia').value.trim()||null,
+    cnpj_cpf: document.getElementById('cliMCnpj').value.trim()||null,
+    tipo_pessoa: document.getElementById('cliMTipoPessoa').value,
+    endereco: document.getElementById('cliMEndereco').value.trim()||null,
+    numero: document.getElementById('cliMNumero').value.trim()||null,
+    complemento: document.getElementById('cliMCompl').value.trim()||null,
+    bairro: document.getElementById('cliMBairro').value.trim()||null,
+    cidade: document.getElementById('cliMCidade').value.trim()||null,
+    uf: document.getElementById('cliMUf').value.trim().toUpperCase()||null,
+    cep: document.getElementById('cliMCep').value.trim()||null,
+    fone: document.getElementById('cliMFone').value.trim()||null,
+    celular: document.getElementById('cliMCelular').value.trim()||null,
+    email: document.getElementById('cliMEmail').value.trim()||null,
+  };
+  if(tipo==='fornecedor') dados.tipo_fornecedor = document.getElementById('cliMTipoForn').value;
+  const errEl = document.getElementById('cliModalErro');
+  errEl.style.display='none';
+
+  // Salva com tolerância a colunas ausentes: remove automaticamente e tenta de novo
+  let dadosEnvio = {...dados};
+  let err;
+  for(let _t = 0; _t < 15; _t++){
+    const r = id
+      ? await window._sb.from(tabela).update(dadosEnvio).eq('id',id)
+      : await window._sb.from(tabela).insert([dadosEnvio]);
+    err = r.error;
+    if(!err) break;
+    const col = (err.message.match(/Could not find the '(\w+)' column/i) ||
+                 err.message.match(/column "(\w+)" of relation/i))?.[1];
+    if(col) { delete dadosEnvio[col]; continue; }
+    break; // outro tipo de erro — para
+  }
+  if(err){ errEl.textContent='Erro: '+err.message; errEl.style.display='block'; return; }
+  // Atualiza cache e re-renderiza
+  if(tipo==='fornecedor') await _bmCarregarFornecedores(true);
+  else { await _bmCarregarClientes(true); /* invalida cache do vendedor também */ }
+  _cliFecharModal();
+  await _cliIniciar();
+  toast('✅ Cadastro salvo!');
+}
+
+// Fecha modal ao clicar fora
+document.getElementById('cliModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('cliModal')) _cliFecharModal();
+});
+
+// ═══════════════════════════════════════════════
+// AUTOCOMPLETE GLOBAL (data-cli-ac="1")
+// ═══════════════════════════════════════════════
+(function(){
+  let _acDrop = null;
+  let _acInput = null;
+
+  function _criarDrop(){
+    const d = document.createElement('div');
+    d.style.cssText='position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #16a34a;border-radius:10px;z-index:8000;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:2px;';
+    return d;
+  }
+
+  document.addEventListener('input', async e=>{
+    const inp = e.target;
+    if(!inp.dataset.cliAc) return;
+    const q = inp.value.trim();
+    if(!q || q.length < 2){
+      if(_acDrop) _acDrop.style.display='none';
+      return;
+    }
+    const lista = await _bmCarregarClientes();
+    const ql = q.toLowerCase();
+    const res = lista.filter(c=>
+      (c.nome||'').toLowerCase().includes(ql)||
+      (c.fantasia||'').toLowerCase().includes(ql)||
+      (c.cnpj_cpf||'').includes(q)
+    ).slice(0,8);
+
+    // Garante dropdown posicionado no input
+    if(!_acDrop || _acInput !== inp){
+      if(_acDrop) _acDrop.remove();
+      if(!inp.parentElement.style.position) inp.parentElement.style.position='relative';
+      _acDrop = _criarDrop();
+      inp.parentElement.appendChild(_acDrop);
+      _acInput = inp;
+    }
+    if(!res.length){ _acDrop.style.display='none'; return; }
+    _acDrop.innerHTML = res.map(c=>`
+      <div data-id="${c.id}" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0fdf4;font-size:13px;">
+        <div style="font-weight:700;color:#111;">${c.fantasia||c.nome}</div>
+        ${c.fantasia?`<div style="font-size:11px;color:#6b7280;">${c.nome}</div>`:''}
+        ${c.cidade?`<div style="font-size:11px;color:#9ca3af;">📍 ${c.cidade}/${c.uf||''}</div>`:''}
+      </div>`).join('');
+    _acDrop.querySelectorAll('[data-id]').forEach(el=>{
+      el.addEventListener('mousedown', ev=>{
+        ev.preventDefault();
+        const c = lista.find(x=>x.id===el.dataset.id);
+        if(!c) return;
+        inp.value = c.fantasia||c.nome;
+        // Guarda dados do cliente no form pai para uso posterior
+        inp.dataset.clienteId = c.id;
+        _acDrop.style.display='none';
+      });
+    });
+    _acDrop.style.display='block';
+  });
+
+  document.addEventListener('click', e=>{
+    if(_acDrop && !e.target.closest('[data-cli-ac]')) _acDrop.style.display='none';
+  });
+  document.addEventListener('focus', e=>{
+    if(_acDrop && e.target !== _acInput) _acDrop.style.display='none';
+  }, true);
 })();
 </script>
 </body>
