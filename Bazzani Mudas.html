@@ -1718,7 +1718,6 @@ async function _gerarControlePedido(envId){
 
   <div class="acoes">
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
-    ${(()=>{const _wppNum=_melhorTel.replace(/\D/g,'');return _wppNum?`<a class="btn-wpp" href="https://wa.me/55${_wppNum}?text=Olá ${encodeURIComponent(env.cliente||'')}! Segue seu pedido Bazzani Mudas nº ${numPedido}." target="_blank">💬 Enviar no WhatsApp</a>`:'';})()} 
   </div>
 
   <div class="footer">
@@ -1743,19 +1742,120 @@ async function _gerarControlePedido(envId){
     var _fr = document.getElementById('controleModalIframe');
     if(_fr && _fr.contentWindow) _fr.contentWindow.print();
   };
+
+  // Toast de notificação
+  window._bmToast = function(msg, dur){
+    var t = document.getElementById('_bmToastEl');
+    if(!t){
+      t = document.createElement('div');
+      t.id = '_bmToastEl';
+      t.style.cssText = 'position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:999999;background:#1a1a2e;color:#fff;padding:13px 26px;border-radius:14px;font-size:14px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;white-space:nowrap;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(t._tmr);
+    t._tmr = setTimeout(function(){
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(-10px)';
+    }, dur||3500);
+  };
+
+  // Detecta se a extensão Bazzani WPP está instalada
+  window._bmExtReady = false;
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type === 'BAZZANI_EXT_READY') window._bmExtReady = true;
+  });
+
+  // Captura imagem do controle e envia pro WhatsApp (via extensão ou clipboard)
+  window._bmEnviarWppComImagem = async function(wppUrl, clienteNome){
+    var iframe = document.getElementById('controleModalIframe');
+    if(!iframe || !iframe.contentDocument){ window.open(wppUrl,'wpp_bazzani'); return; }
+    window._bmToast('⏳ Gerando imagem do pedido...');
+    try{
+      // Carrega html2canvas no iframe se não estiver
+      await new Promise(function(resolve, reject){
+        if(iframe.contentWindow.html2canvas){ resolve(); return; }
+        var s = iframe.contentDocument.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload = resolve; s.onerror = reject;
+        iframe.contentDocument.head.appendChild(s);
+      });
+      // Esconde os botões antes de capturar
+      var acoes = iframe.contentDocument.querySelector('.acoes');
+      var hint  = iframe.contentDocument.querySelector('.wpp-hint');
+      if(acoes) acoes.style.visibility = 'hidden';
+      if(hint)  hint.style.visibility  = 'hidden';
+      // Captura
+      var canvas = await iframe.contentWindow.html2canvas(iframe.contentDocument.body,{
+        scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false
+      });
+      // Reexibe botões
+      if(acoes) acoes.style.visibility = '';
+      if(hint)  hint.style.visibility  = '';
+
+      var imageData = canvas.toDataURL('image/png');
+
+      // Extrai phone e text da URL do WhatsApp
+      var urlObj = new URL(wppUrl);
+      var phone = urlObj.searchParams.get('phone') || '';
+      var text  = urlObj.searchParams.get('text')  || '';
+
+      if(window._bmExtReady){
+        // ✅ Extensão instalada: joga direto na conversa
+        window.postMessage({
+          type: 'BAZZANI_WPP_SEND',
+          phone: phone,
+          text: text,
+          imageData: imageData
+        }, '*');
+        window._bmToast('📤 Enviando para o WhatsApp...');
+      } else {
+        // Fallback: copia para clipboard + abre WhatsApp
+        var blob = await new Promise(function(r){ canvas.toBlob(r,'image/png'); });
+        try{
+          await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+        } catch(e){}
+        window.open(wppUrl,'wpp_bazzani');
+        window._bmToast('✅ Imagem copiada! Cole no WhatsApp com ⌘+V  |  💡 Instale a extensão para envio automático');
+      }
+    } catch(e){
+      console.error('_bmEnviarWppComImagem:',e);
+      window.open(wppUrl,'wpp_bazzani');
+    }
+  };
   if(!_modal){
     _modal = document.createElement('div');
     _modal.id = 'controleModal';
     _modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;';
-    _modal.innerHTML = '<div style="position:relative;width:94vw;max-width:1100px;height:94vh;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.5);display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a4f29;color:#fff;flex-shrink:0;"><span style="font-weight:600;font-size:15px;">&#128203; Controle de Pedido</span><div style="display:flex;gap:8px;"><button id="controleModalImprimir" style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#128424; Imprimir</button><button id="controleModalFechar" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#10005; Fechar</button></div></div><iframe id="controleModalIframe" style="flex:1;border:none;"></iframe></div>';
+    _modal.innerHTML = '<div style="position:relative;width:94vw;max-width:1100px;height:94vh;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.5);display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a4f29;color:#fff;flex-shrink:0;"><span style="font-weight:600;font-size:15px;">&#128203; Controle de Pedido</span><div style="display:flex;gap:8px;"><button id="controleModalWpp" style="background:#25d366;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;display:none;">&#128248; WhatsApp</button><button id="controleModalImprimir" style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#128424; Imprimir</button><button id="controleModalFechar" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">&#10005; Fechar</button></div></div><iframe id="controleModalIframe" style="flex:1;border:none;"></iframe></div>';
     document.body.appendChild(_modal);
     document.getElementById('controleModalFechar').addEventListener('click', window._bmFecharControle);
     document.getElementById('controleModalImprimir').addEventListener('click', window._bmImprimirControle);
+    document.getElementById('controleModalWpp').addEventListener('click', function(){
+      var url = this.dataset.wppurl;
+      var nome = this.dataset.nome;
+      if(url) window._bmEnviarWppComImagem(url, nome);
+    });
     _modal.addEventListener('click', function(e){if(e.target===_modal) window._bmFecharControle();});
   }
   const _iframe = _modal.querySelector('#controleModalIframe');
   if(_iframe.src && _iframe.src.startsWith('blob:')) URL.revokeObjectURL(_iframe.src);
   _iframe.src = _blobUrl;
+  // Atualiza botão WhatsApp da barra do modal (no contexto pai = clipboard funciona)
+  const _wppBtn = document.getElementById('controleModalWpp');
+  if(_wppBtn){
+    const _wppNumM = _melhorTel.replace(/\D/g,'');
+    if(_wppNumM){
+      const _wppMsgM = encodeURIComponent('Olá ' + (env.cliente||'') + '! Segue em anexo o controle do seu pedido Bazzani Mudas nº ' + numPedido + '. 🌱');
+      _wppBtn.dataset.wppurl = 'https://web.whatsapp.com/send?phone=55' + _wppNumM + '&text=' + _wppMsgM;
+      _wppBtn.dataset.nome = env.cliente||'cliente';
+      _wppBtn.style.display = '';
+    } else {
+      _wppBtn.style.display = 'none';
+    }
+  }
   _modal.style.display = 'flex';
 }
 
@@ -1983,7 +2083,7 @@ document.getElementById('tabs').addEventListener('click', e=>{
   btn.classList.add('active');
   document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
   currentTab = btn.dataset.tab;
-  document.getElementById('canalSwitcher').style.display = (btn.dataset.tab==='envio'||btn.dataset.tab==='financeiro') ? 'none' : '';
+  document.getElementById('canalSwitcher').style.display = (btn.dataset.tab==='envio'||btn.dataset.tab==='financeiro'||btn.dataset.tab==='clientes'||btn.dataset.tab==='negociando') ? 'none' : '';
   if(btn.dataset.tab==='envio') renderEnvio();
   if(btn.dataset.tab==='financeiro') renderFinanceiro();
   if(btn.dataset.tab==='clientes'){ _cliIniciar().then(()=>_cliSetView('lista')); }
@@ -3502,102 +3602,7 @@ function autoRegistrarCliente(nome, canal){
 
 function atualizarDatalistClientes(){ /* substituído por dropdown customizado */ }
 
-// ── Autocomplete customizado: zero interferência do browser ──
-(function(){
-  let activeInput = null;
-
-  const drop = document.createElement('div');
-  drop.id = 'cliAcDrop';
-  drop.style.cssText = [
-    'display:none','position:fixed','z-index:99999',
-    'background:#fff','border:1.5px solid #D1D5DB','border-radius:10px',
-    'box-shadow:0 8px 28px rgba(0,0,0,.14)','max-height:230px',
-    'overflow-y:auto','min-width:200px','font-family:inherit'
-  ].join(';');
-  document.body.appendChild(drop);
-
-  function posicionar(inp){
-    const r = inp.getBoundingClientRect();
-    drop.style.left  = r.left + 'px';
-    drop.style.top   = (r.bottom + 3) + 'px';
-    drop.style.width = r.width + 'px';
-  }
-
-  function mostrar(inp, matches){
-    if(!matches.length){ esconder(); return; }
-    activeInput = inp;
-    posicionar(inp);
-    drop.innerHTML = matches.map((n,i)=>`<div data-acv="${n.replace(/"/g,'&quot;')}" style="padding:10px 14px;font-size:13px;cursor:pointer;color:#111;${i<matches.length-1?'border-bottom:1px solid #F3F4F6;':''}">${n}</div>`).join('');
-    drop.style.display = 'block';
-  }
-
-  function esconder(){
-    drop.style.display = 'none';
-    drop.innerHTML = '';
-    activeInput = null;
-  }
-
-  function buscar(q){
-    if(!q) return [];
-    const ql = q.toLowerCase();
-    return [...new Set((state.clientesCad||[]).map(c=>c.nome).filter(Boolean))]
-      .filter(n=>n.toLowerCase().startsWith(ql)||n.toLowerCase().includes(ql))
-      .sort((a,b)=>{
-        const as=a.toLowerCase().startsWith(ql), bs=b.toLowerCase().startsWith(ql);
-        return as===bs ? a.localeCompare(b) : as ? -1 : 1;
-      }).slice(0,10);
-  }
-
-  document.addEventListener('input', e=>{
-    const inp = e.target;
-    if(!inp.dataset.cliAc) return;
-    const q = inp.value.trim();
-    if(!q){ esconder(); return; }
-    mostrar(inp, buscar(q));
-  });
-
-  document.addEventListener('focus', e=>{
-    if(e.target.dataset.cliAc) esconder();
-  }, true);
-
-  // hover
-  drop.addEventListener('mouseover', e=>{
-    const item = e.target.closest('[data-acv]'); if(!item) return;
-    drop.querySelectorAll('[data-acv]').forEach(el=>el.style.background='');
-    item.style.background='#F0FDF4';
-  });
-
-  // clique no item
-  drop.addEventListener('mousedown', e=>{
-    const item = e.target.closest('[data-acv]'); if(!item) return;
-    e.preventDefault();
-    if(activeInput){ activeInput.value = item.dataset.acv; activeInput.dispatchEvent(new Event('change',{bubbles:true})); }
-    esconder();
-  });
-
-  // teclas: seta / enter / esc
-  document.addEventListener('keydown', e=>{
-    if(drop.style.display==='none') return;
-    const items = [...drop.querySelectorAll('[data-acv]')];
-    const cur   = drop.querySelector('[data-acv][aria-selected]');
-    let idx = cur ? items.indexOf(cur) : -1;
-    if(e.key==='ArrowDown'){ e.preventDefault(); idx=Math.min(idx+1,items.length-1); }
-    else if(e.key==='ArrowUp'){ e.preventDefault(); idx=Math.max(idx-1,0); }
-    else if(e.key==='Enter' && cur){ e.preventDefault(); if(activeInput) activeInput.value=cur.dataset.acv; esconder(); return; }
-    else if(e.key==='Escape'){ esconder(); return; }
-    else return;
-    items.forEach(it=>{ it.removeAttribute('aria-selected'); it.style.background=''; });
-    if(items[idx]){ items[idx].setAttribute('aria-selected','true'); items[idx].style.background='#F0FDF4'; }
-  });
-
-  // fecha ao clicar fora
-  document.addEventListener('mousedown', e=>{
-    if(!drop.contains(e.target) && e.target!==activeInput) esconder();
-  });
-
-  window.addEventListener('scroll', esconder, true);
-  window.addEventListener('resize', esconder);
-})();
+// autocomplete antigo removido — substituído pelo sistema global com Supabase (linha ~7555)
 
 function renderClientes(){
   if(!state.clientesCad) state.clientesCad=[];
