@@ -79,6 +79,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .total-label-forn{font-size:13px;font-weight:700;color:#92400e}
 .total-value-forn{font-size:22px;font-weight:900;color:#92400e}
 
+/* FORNECEDOR POR LINHA */
+.forn-cell-wrap{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.forn-sub-input{width:100%;background:#fffbeb;border:1.5px solid #fde68a;border-radius:7px;padding:7px 10px;font-size:12px;color:#92400e;outline:none;font-family:inherit;font-weight:600;transition:border-color .15s,-webkit-appearance:none;}
+.forn-sub-input::placeholder{color:#b45309;font-weight:400;font-size:11px;}
+.forn-sub-input:focus{border-color:#f59e0b;background:#fff8e1;}
+
 /* BOTÃO ENVIAR */
 .btn-enviar{width:100%;background:#16a34a;border:none;border-radius:14px;padding:17px;font-size:17px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;font-family:inherit}
 .btn-enviar:active{opacity:.85}
@@ -113,7 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* MOBILE tweaks */
 @media(max-width:480px){
   .prod-header,.prod-row,.forn-row{grid-template-columns:1fr 60px 90px 36px}
-  .prod-header span:nth-child(4),.prod-row input:nth-child(4),.forn-row input:nth-child(4){display:none}
+  .prod-header span:nth-child(4),.prod-row input:nth-child(4),.forn-row>input:nth-child(4){display:none}
   .prod-row input[readonly],.forn-row input[readonly]{display:block!important}
   /* hide unit price col on very small, keep total */
   .prod-header{grid-template-columns:1fr 60px 90px 36px}
@@ -318,14 +324,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
         <!-- FORNECEDOR -->
         <div class="card">
-          <div class="card-title">🏭 Fornecedor (Custo)</div>
-          <div class="field">
-            <label>Nome do Fornecedor</label>
-            <input type="text" id="pFornecedor" placeholder="Ex: Viveiro do João" autocomplete="off">
-          </div>
-          <div style="margin-top:8px">
+          <div class="card-title">🏭 Fornecedores (Custo)</div>
+          <div style="margin-top:4px">
             <div class="prod-header" style="grid-template-columns:2fr 80px 110px 110px 36px">
-              <span>Variedade / Muda</span>
+              <span>Muda · Fornecedor</span>
               <span>Qtd</span>
               <span>Custo/un (R$)</span>
               <span>Total (R$)</span>
@@ -403,12 +405,33 @@ function iniciarApp(){
   });
   addProduto();
 
-  // Realtime — atualiza histórico quando status mudar
-  sb.channel('vendedor-updates')
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'pedidos_vendedor'}, ()=>{
-      if(document.getElementById('secaoHist')?.style.display!=='none') carregarHistorico();
-    })
-    .subscribe();
+  // Realtime — atualiza histórico em tempo real (INSERT + UPDATE + DELETE)
+  function _aplicarUpdate(){
+    if(document.getElementById('secaoHist')?.style.display!=='none'){
+      carregarHistorico();
+    } else {
+      // Mostra badge na aba histórico para sinalizar atualização
+      const tabHist = document.getElementById('tabHist');
+      if(tabHist && !tabHist.querySelector('.notif-dot')){
+        const dot = document.createElement('span');
+        dot.className = 'notif-dot';
+        dot.style.cssText = 'display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-left:5px;vertical-align:middle;';
+        tabHist.appendChild(dot);
+      }
+    }
+  }
+
+  sb.channel('vendedor-realtime')
+    .on('postgres_changes', {event:'*', schema:'public', table:'pedidos_vendedor'}, _aplicarUpdate)
+    .subscribe((status)=>{
+      if(status === 'SUBSCRIBED') console.log('[Realtime] conectado ✓');
+      if(status === 'CHANNEL_ERROR') console.warn('[Realtime] erro — usando polling');
+    });
+
+  // Polling de fallback a cada 30s (garante atualização mesmo sem Realtime)
+  setInterval(()=>{
+    if(document.getElementById('secaoHist')?.style.display!=='none') carregarHistorico();
+  }, 30000);
 }
 
 // ── TABS ──
@@ -417,7 +440,11 @@ function mudarTab(tab){
   document.getElementById('secaoHist').style.display  = tab==='historico'?'block':'none';
   document.getElementById('tabNovo').classList.toggle('ativo',tab==='novo');
   document.getElementById('tabHist').classList.toggle('ativo',tab==='historico');
-  if(tab==='historico') carregarHistorico();
+  if(tab==='historico'){
+    // Remove badge de notificação
+    document.querySelectorAll('#tabHist .notif-dot').forEach(d=>d.remove());
+    carregarHistorico();
+  }
 }
 
 // ── HELPERS ──
@@ -475,17 +502,24 @@ function criarProdRow(nome, qtd, val){
   return div;
 }
 
-function criarFornRow(nome, qtd, val, auto){
+function criarFornRow(nome, qtd, val, auto, fornNome){
   const div = document.createElement('div');
   div.className = 'forn-row' + (auto?' forn-auto':'');
   div.style.gridTemplateColumns = '2fr 80px 110px 110px 36px';
   const bg = auto ? 'background:#f0fdf4;border-color:#bbf7d0;' : '';
-  const nI = document.createElement('input'); nI.type='text';   nI.setAttribute('data-c','nome'); nI.placeholder='Ex: Rosa vermelha'; nI.value=nome||''; nI.autocomplete='off'; nI.style.cssText=bg;
+
+  // Primeira célula: nome da muda (em cima) + fornecedor (embaixo)
+  const cell = document.createElement('div');
+  cell.className = 'forn-cell-wrap';
+  const nI = document.createElement('input'); nI.type='text'; nI.setAttribute('data-c','nome'); nI.placeholder='Ex: Rosa vermelha'; nI.value=nome||''; nI.autocomplete='off'; nI.style.cssText=bg;
+  const fI = document.createElement('input'); fI.type='text'; fI.setAttribute('data-c','forn'); fI.className='forn-sub-input'; fI.placeholder='🏭 Fornecedor desta muda...'; fI.value=fornNome||''; fI.autocomplete='off';
+  cell.appendChild(nI); cell.appendChild(fI);
+
   const qI = document.createElement('input'); qI.type='number'; qI.setAttribute('data-c','qtd');  qI.placeholder='0';     qI.min='0'; qI.value=qtd||''; qI.style.cssText='text-align:center;'+bg;
   const vI = document.createElement('input'); vI.type='number'; vI.setAttribute('data-c','val');  vI.placeholder='0,00';  vI.min='0'; vI.step='0.01'; vI.value=val||''; vI.style.textAlign='right';
   const sI = document.createElement('input'); sI.type='text';   sI.setAttribute('data-c','sub');  sI.placeholder='0,00';  sI.readOnly=true; sI.style.textAlign='right';
   const btn= document.createElement('button'); btn.type='button'; btn.className='btn-rem-forn'; btn.textContent='−';
-  div.appendChild(nI); div.appendChild(qI); div.appendChild(vI); div.appendChild(sI); div.appendChild(btn);
+  div.appendChild(cell); div.appendChild(qI); div.appendChild(vI); div.appendChild(sI); div.appendChild(btn);
   return div;
 }
 
@@ -549,9 +583,10 @@ async function enviarPedido(e){
   const fornProds=[];
   document.querySelectorAll('#listaForn .forn-row').forEach(row=>{
     const nome=row.querySelector('[data-c=nome]').value.trim();
+    const forn=row.querySelector('[data-c=forn]')?row.querySelector('[data-c=forn]').value.trim():'';
     const qtd =Number(row.querySelector('[data-c=qtd]').value)||0;
     const val =Number(row.querySelector('[data-c=val]').value)||0;
-    if(nome) fornProds.push({variedade:nome,quantidade:qtd,custoUnitario:val,totalCusto:qtd*val});
+    if(nome) fornProds.push({variedade:nome,fornecedor:forn,quantidade:qtd,custoUnitario:val,totalCusto:qtd*val});
   });
 
   if(!produtos.length){alert('Adicione pelo menos um produto.');btn.disabled=false;btn.textContent='Enviar Pedido';return;}
@@ -561,8 +596,9 @@ async function enviarPedido(e){
   fornProds.forEach(f=>produtosCompletos.push({...f, produto:f.variedade, _tipo:'fornecedor'}));
 
   const obsBase = document.getElementById('pObs').value.trim();
-  const fornNome = document.getElementById('pFornecedor').value.trim();
-  const obsFinal = [obsBase, fornNome ? 'Fornecedor: '+fornNome : ''].filter(Boolean).join(' | ');
+  const obsFinal = obsBase;
+  // Resumo dos fornecedores únicos para a coluna fornecedor
+  const fornNomesUnicos=[...new Set(fornProds.map(f=>f.fornecedor).filter(Boolean))].join(', ');
 
   const pedido={
     cliente:      document.getElementById('pCliente').value.trim(),
@@ -576,6 +612,7 @@ async function enviarPedido(e){
     desconto:     Number(document.getElementById('pDesconto')?.value)||0,
     transporte:   document.getElementById('pTransporte').value||null,
     doca:         document.getElementById('pDoca').value.trim()||null,
+    fornecedor:   fornNomesUnicos||null,
     status:       'pendente'
   };
 
@@ -633,14 +670,12 @@ async function editarPedido(pedidoId){
   document.getElementById('pContato').value=data.contato||'';
   if(flatpickrInst&&data.data_entrega) flatpickrInst.setDate(data.data_entrega);
   document.getElementById('pCanal').value=data.canal||'digital';
-  document.getElementById('pFornecedor').value=data.fornecedor||'';
+  // fornecedor agora é por linha — não usa mais campo global
   if(document.getElementById('pDesconto')) document.getElementById('pDesconto').value=data.desconto||0;
   if(document.getElementById('pTransporte')) document.getElementById('pTransporte').value=data.transporte||'';
   if(document.getElementById('pDoca')) document.getElementById('pDoca').value=data.doca||'';
   recalcVenda();
-  // Remove sufixo "Fornecedor: xxx" do obs
-  const obsLimpo=(data.obs||'').replace(/\s*\|\s*Fornecedor:.*$/,'').trim();
-  document.getElementById('pObs').value=obsLimpo;
+  document.getElementById('pObs').value=(data.obs||'').trim();
   // Adiciona produtos (venda e fornecedor separados)
   const prodsVenda=(data.produtos||[]).filter(x=>!x._tipo||x._tipo==='venda');
   const prodsForn =(data.produtos||[]).filter(x=>x._tipo==='fornecedor');
@@ -653,6 +688,8 @@ async function editarPedido(pedidoId){
     prodsForn.forEach((f,i)=>{
       if(i<fornRows.length){
         fornRows[i].querySelector('[data-c=val]').value=f.custoUnitario||'';
+        const fInput=fornRows[i].querySelector('[data-c=forn]');
+        if(fInput) fInput.value=f.fornecedor||'';
       }
     });
     recalcForn();
@@ -695,7 +732,11 @@ async function carregarHistorico(){
         <div class="hist-data">📅 Entrega: ${dataFmt}${criadoFmt?' · Lançado: '+criadoFmt:''}</div>
         <div class="hist-prods">🌱 ${prods}</div>
         ${totalVenda>0?`<div style="font-size:13px;font-weight:700;color:#15803d;margin-top:4px;">💰 Total venda: ${brl(totalVenda)}</div>`:''}
-        ${p.fornecedor?`<div style="font-size:12px;color:#92400e;margin-top:3px;">🏭 ${p.fornecedor}${totalForn>0?' — Custo: '+brl(totalForn):''}</div>`:''}
+        ${(()=>{
+          const fornsUnicos=[...new Set(prodsForn.map(f=>f.fornecedor).filter(Boolean))];
+          const fornLabel=fornsUnicos.length?fornsUnicos.join(', '):(p.fornecedor||'');
+          return fornLabel?`<div style="font-size:12px;color:#92400e;margin-top:3px;">🏭 ${fornLabel}${totalForn>0?' — Custo: '+brl(totalForn):''}</div>`:'';
+        })()}
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span class="hist-canal ${p.canal||'digital'}">${p.canal==='digital'?'🌐 Digital':'🌿 Orgânico'}</span>
           ${podeEditar?`<button onclick="editarPedido('${p.id}')" style="background:#f0fdf4;border:1.5px solid #16a34a;color:#15803d;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️ Editar</button>`:''}
