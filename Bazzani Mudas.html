@@ -1512,6 +1512,34 @@ function salvarEstado(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   toast('Salvo');
   _syncDigital();
+  _syncStateToSupabase();
+}
+
+async function _syncStateToSupabase(){
+  if(!window._sb) return;
+  try{
+    await window._sb.from('app_state').upsert({id:'main', state_json: JSON.stringify(state), updated_at: new Date().toISOString()});
+  }catch(e){ console.warn('[BM] Erro ao sincronizar state:', e); }
+}
+
+async function _loadStateFromSupabase(){
+  if(!window._sb) return;
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    // Tem dados locais: sincroniza para a nuvem em background
+    _syncStateToSupabase();
+    return;
+  }
+  try{
+    const {data, error} = await window._sb.from('app_state').select('state_json').eq('id','main').single();
+    if(data && data.state_json){
+      const loaded = JSON.parse(data.state_json);
+      Object.assign(state, loaded);
+      localStorage.setItem(STORAGE_KEY, data.state_json);
+      renderTudo();
+      toast('✅ Dados carregados da nuvem!');
+    }
+  }catch(e){ console.warn('[BM] Erro ao carregar state:', e); }
 }
 
 // ── Supabase sync helpers ──
@@ -7287,6 +7315,9 @@ document.addEventListener('keydown', e=>{
 
   // Sincroniza digital na carga inicial
   setTimeout(()=>_syncDigital(), 1500);
+
+  // ── Carrega state da nuvem se localStorage estiver vazio ──
+  setTimeout(()=>_loadStateFromSupabase(), 800);
 
   // ── PRÉ-CARREGA CLIENTES para autocomplete instantâneo ──
   setTimeout(()=>{ _bmCarregarClientes().catch(()=>{}); }, 1200);
